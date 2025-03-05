@@ -19,7 +19,7 @@ class Route(Base):
     name = Column(String, nullable=False)
     mode = Column(Enum(TransportationMode), nullable=False)
     distance = Column(Float, nullable=False)
-    travel_time = Column(Float, nullable=False)
+    travel_time = Column(Float, nullable=False, comment="In hours")
     start_point = Column(Geometry("POINT", 4326), nullable=False)
     end_point = Column(Geometry("POINT", 4326), nullable=False)
     created_at = Column(DateTime, server_default=func.current_timestamp(),
