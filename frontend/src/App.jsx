@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./App.css";
 import Map from "./Map.jsx";
+import { useWeather } from "./Weather";
 
 function App() {
   // State for form inputs
@@ -66,7 +67,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Rotterdam Port, Netherlands",
+            to_coords: [51.9225, 4.47917],
             mode: "Land",
             vehicle: "Truck LM-4500",
             company: "EuroFreight Logistics",
@@ -80,7 +83,9 @@ function App() {
           },
           {
             from: "Rotterdam Port, Netherlands",
+            from_coords: [51.9225, 4.47917],
             to: "New York Harbor, USA",
+            to_coords: [40.7128, -74.006],
             mode: "Sea",
             vehicle: "Container Ship MS Atlantic Explorer",
             company: "Maersk Line",
@@ -96,7 +101,9 @@ function App() {
           },
           {
             from: "New York Harbor, USA",
+            from_coords: [40.7128, -74.006],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck FH-9870",
             company: "American Road Logistics",
@@ -121,7 +128,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Frankfurt Airport (FRA), Germany",
+            to_coords: [50.1109, 8.6821],
             mode: "Land",
             vehicle: "Truck MX-2050",
             company: "SpeedLogistics",
@@ -133,7 +142,9 @@ function App() {
           },
           {
             from: "Frankfurt Airport (FRA), Germany",
+            from_coords: [50.1109, 8.6821],
             to: "JFK Airport (JFK), New York, USA",
+            to_coords: [40.6413, -73.7781],
             mode: "Air",
             vehicle: "Boeing 777F Cargo",
             company: "Lufthansa Cargo",
@@ -150,7 +161,9 @@ function App() {
           },
           {
             from: "JFK Airport (JFK), New York, USA",
+            from_coords: [40.6413, -73.7781],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck FH-9870",
             company: "American Road Logistics",
@@ -175,7 +188,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Berlin Logistics Hub, Germany",
+            to_coords: [52.52, 13.405],
             mode: "Land",
             vehicle: "Train Euro Cargo Express",
             company: "DB Cargo",
@@ -191,7 +206,9 @@ function App() {
           },
           {
             from: "Berlin Logistics Hub, Germany",
+            from_coords: [52.52, 13.405],
             to: "Hamburg Port, Germany",
+            to_coords: [53.5511, 9.9937],
             mode: "Land",
             vehicle: "Truck VT-8900",
             company: "Deutsche LogistikGruppe",
@@ -203,7 +220,9 @@ function App() {
           },
           {
             from: "Hamburg Port, Germany",
+            from_coords: [53.5511, 9.9937],
             to: "Montreal Harbor, Canada",
+            to_coords: [45.5088, -73.554],
             mode: "Sea",
             vehicle: "Container Ship MS Nordic Voyager",
             company: "MSC Mediterranean Shipping",
@@ -219,7 +238,9 @@ function App() {
           },
           {
             from: "Montreal Harbor, Canada",
+            from_coords: [45.5088, -73.554],
             to: "US-Canada Border Crossing",
+            to_coords: [45.4215, -75.6972],
             mode: "Land",
             vehicle: "Truck CM-4520",
             company: "CanAm Logistics",
@@ -231,7 +252,9 @@ function App() {
           },
           {
             from: "US-Canada Border Crossing",
+            from_coords: [45.4215, -75.6972],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck US-7720",
             company: "American Road Logistics",
@@ -256,7 +279,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Berlin, Germany",
+            to_coords: [52.52, 13.405],
             mode: "Land",
             vehicle: "Truck VT-8800",
             company: "Deutsche LogistikGruppe",
@@ -268,7 +293,9 @@ function App() {
           },
           {
             from: "Berlin, Germany",
+            from_coords: [52.52, 13.405],
             to: "Warsaw, Poland",
+            to_coords: [52.2297, 21.0122],
             mode: "Land",
             vehicle: "Truck VT-8800",
             company: "Deutsche LogistikGruppe",
@@ -280,7 +307,9 @@ function App() {
           },
           {
             from: "Warsaw, Poland",
+            from_coords: [52.2297, 21.0122],
             to: "Moscow, Russia",
+            to_coords: [55.7558, 37.6176],
             mode: "Land",
             vehicle: "Truck VT-8800",
             company: "EuroAsian Logistics",
@@ -292,7 +321,9 @@ function App() {
           },
           {
             from: "Moscow, Russia",
+            from_coords: [55.7558, 37.6176],
             to: "Vladivostok, Russia",
+            to_coords: [43.1167, 131.8833],
             mode: "Land",
             vehicle: "Train Trans-Siberian Express",
             company: "Russian Railways",
@@ -308,7 +339,9 @@ function App() {
           },
           {
             from: "Vladivostok, Russia",
+            from_coords: [43.1167, 131.8833],
             to: "Beijing, China",
+            to_coords: [39.9042, 116.4074],
             mode: "Land",
             vehicle: "Truck AS-5600",
             company: "AsiaRoute Logistics",
@@ -320,7 +353,9 @@ function App() {
           },
           {
             from: "Beijing, China",
+            from_coords: [39.9042, 116.4074],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck CN-2280",
             company: "China Express",
@@ -345,7 +380,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Hamburg Port, Germany",
+            to_coords: [53.5511, 9.9937],
             mode: "Land",
             vehicle: "Truck DT-4500",
             company: "Deutsche LogistikGruppe",
@@ -357,7 +394,9 @@ function App() {
           },
           {
             from: "Hamburg Port, Germany",
+            from_coords: [53.5511, 9.9937],
             to: "Suez Canal, Egypt",
+            to_coords: [30.0286, 32.5499],
             mode: "Sea",
             vehicle: "Container Ship MS Europa",
             company: "Maersk Line",
@@ -373,7 +412,9 @@ function App() {
           },
           {
             from: "Suez Canal, Egypt",
+            from_coords: [30.0286, 32.5499],
             to: "Singapore Port, Singapore",
+            to_coords: [1.3521, 103.8198],
             mode: "Sea",
             vehicle: "Container Ship MS Europa",
             company: "Maersk Line",
@@ -389,7 +430,9 @@ function App() {
           },
           {
             from: "Singapore Port, Singapore",
+            from_coords: [1.3521, 103.8198],
             to: "Shanghai Port, China",
+            to_coords: [31.2304, 121.4737],
             mode: "Sea",
             vehicle: "Container Ship MS Europa",
             company: "Maersk Line",
@@ -405,7 +448,9 @@ function App() {
           },
           {
             from: "Shanghai Port, China",
+            from_coords: [31.2304, 121.4737],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck CN-9900",
             company: "China Express",
@@ -417,10 +462,6 @@ function App() {
           },
         ],
       },
-
-      // NEW ADDED ROUTES
-
-      // Adding another air route option with different stops
       {
         id: 6,
         modes: ["Air"],
@@ -433,7 +474,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Munich Airport (MUC), Germany",
+            to_coords: [48.3537, 11.7750],
             mode: "Land",
             vehicle: "Electric Truck E-3500",
             company: "GreenLogistics",
@@ -445,7 +488,9 @@ function App() {
           },
           {
             from: "Munich Airport (MUC), Germany",
+            from_coords: [48.3537, 11.7750],
             to: "Dubai International (DXB), UAE",
+            to_coords: [25.2532, 55.3657],
             mode: "Air",
             vehicle: "Airbus A330F",
             company: "Emirates SkyCargo",
@@ -462,7 +507,9 @@ function App() {
           },
           {
             from: "Dubai International (DXB), UAE",
+            from_coords: [25.2532, 55.3657],
             to: "Newark Liberty (EWR), USA",
+            to_coords: [40.6895, -74.1745],
             mode: "Air",
             vehicle: "Boeing 777F",
             company: "Emirates SkyCargo",
@@ -479,7 +526,9 @@ function App() {
           },
           {
             from: "Newark Liberty (EWR), USA",
+            from_coords: [40.6895, -74.1745],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck FT-7200",
             company: "Fast Track Delivery",
@@ -491,8 +540,6 @@ function App() {
           },
         ],
       },
-
-      // Adding a multi-modal route with air and rail
       {
         id: 7,
         modes: ["Air", "Land"],
@@ -505,7 +552,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Paris Charles de Gaulle (CDG), France",
+            to_coords: [49.0097, 2.5479],
             mode: "Land",
             vehicle: "Truck EU-5511",
             company: "Euro Express Freight",
@@ -517,7 +566,9 @@ function App() {
           },
           {
             from: "Paris Charles de Gaulle (CDG), France",
+            from_coords: [49.0097, 2.5479],
             to: "Chicago O'Hare (ORD), USA",
+            to_coords: [41.9742, -87.9073],
             mode: "Air",
             vehicle: "Boeing 747-8F",
             company: "Air France Cargo",
@@ -534,7 +585,9 @@ function App() {
           },
           {
             from: "Chicago O'Hare (ORD), USA",
+            from_coords: [41.9742, -87.9073],
             to: "Chicago Union Station",
+            to_coords: [41.8781, -87.6298],
             mode: "Land",
             vehicle: "Truck US-3300",
             company: "Cross City Transit",
@@ -546,7 +599,9 @@ function App() {
           },
           {
             from: "Chicago Union Station",
+            from_coords: [41.8781, -87.6298],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Rail Cargo Express",
             company: "Amtrak Freight",
@@ -562,8 +617,6 @@ function App() {
           },
         ],
       },
-
-      // Adding a pure rail option (more eco-friendly)
       {
         id: 8,
         modes: ["Land"],
@@ -576,7 +629,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Frankfurt Rail Terminal, Germany",
+            to_coords: [50.1109, 8.6821],
             mode: "Land",
             vehicle: "Truck DL-6620",
             company: "Deutsche LogistikGruppe",
@@ -588,7 +643,9 @@ function App() {
           },
           {
             from: "Frankfurt Rail Terminal, Germany",
+            from_coords: [50.1109, 8.6821],
             to: "Paris Gare du Nord, France",
+            to_coords: [48.8809, 2.3553],
             mode: "Land",
             vehicle: "Deutsche Bahn Cargo Train",
             company: "DB Schenker",
@@ -604,7 +661,9 @@ function App() {
           },
           {
             from: "Paris Gare du Nord, France",
+            from_coords: [48.8809, 2.3553],
             to: "London St Pancras, UK",
+            to_coords: [51.5322, -0.1275],
             mode: "Land",
             vehicle: "Eurostar Cargo Train",
             company: "Eurostar Logistics",
@@ -620,7 +679,9 @@ function App() {
           },
           {
             from: "London St Pancras, UK",
+            from_coords: [51.5322, -0.1275],
             to: "Liverpool Port, UK",
+            to_coords: [53.4106, -3.0044],
             mode: "Land",
             vehicle: "UK Rail Cargo Express",
             company: "GB Railfreight",
@@ -636,7 +697,9 @@ function App() {
           },
           {
             from: "Liverpool Port, UK",
+            from_coords: [53.4106, -3.0044],
             to: "Halifax Port, Canada",
+            to_coords: [44.6488, -63.5752],
             mode: "Sea",
             vehicle: "Container Ship MS Atlantic Voyager",
             company: "Hapag-Lloyd",
@@ -652,7 +715,9 @@ function App() {
           },
           {
             from: "Halifax Port, Canada",
+            from_coords: [44.6488, -63.5752],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Canadian National Railway",
             company: "CN Rail",
@@ -668,8 +733,6 @@ function App() {
           },
         ],
       },
-
-      // Adding a specialized refrigerated transport option for perishable goods
       {
         id: 9,
         modes: ["Air", "Land"],
@@ -683,7 +746,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Amsterdam Schiphol (AMS), Netherlands",
+            to_coords: [52.3105, 4.7683],
             mode: "Land",
             vehicle: "Refrigerated Truck RF-5500",
             company: "ColdChain Logistics",
@@ -697,7 +762,9 @@ function App() {
           },
           {
             from: "Amsterdam Schiphol (AMS), Netherlands",
+            from_coords: [52.3105, 4.7683],
             to: "Atlanta Hartsfield (ATL), USA",
+            to_coords: [33.6407, -84.4277],
             mode: "Air",
             vehicle: "Boeing 777-200F",
             company: "Delta Cargo",
@@ -716,7 +783,9 @@ function App() {
           },
           {
             from: "Atlanta Hartsfield (ATL), USA",
+            from_coords: [28.4257, 48.4887],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Refrigerated Truck KW-8800",
             company: "US Cold Transport",
@@ -730,8 +799,6 @@ function App() {
           },
         ],
       },
-
-      // Adding a specialized secure transport for high-value cargo
       {
         id: 10,
         modes: ["Air", "Land"],
@@ -745,7 +812,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Zurich Airport (ZRH), Switzerland",
+            to_coords: [47.4647, 8.5492],
             mode: "Land",
             vehicle: "Armored Truck SV-2200",
             company: "SecureVault Transport",
@@ -758,7 +827,9 @@ function App() {
           },
           {
             from: "Zurich Airport (ZRH), Switzerland",
+            from_coords: [47.4647, 8.5492],
             to: "New York JFK (JFK), USA",
+            to_coords: [40.6413, -73.7781],
             mode: "Air",
             vehicle: "Swiss Secure Air Transport",
             company: "SWISS WorldCargo",
@@ -776,7 +847,9 @@ function App() {
           },
           {
             from: "New York JFK (JFK), USA",
+            from_coords: [40.6413, -73.7781],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Armored Truck BT-6600",
             company: "Brink's Security Transport",
@@ -789,8 +862,6 @@ function App() {
           },
         ],
       },
-
-      // Adding another sea route with different stops
       {
         id: 11,
         modes: ["Sea"],
@@ -803,7 +874,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Antwerp Port, Belgium",
+            to_coords: [51.2465, 4.4056],
             mode: "Land",
             vehicle: "Electric Truck EC-5500",
             company: "EcoFreight",
@@ -815,7 +888,9 @@ function App() {
           },
           {
             from: "Antwerp Port, Belgium",
+            from_coords: [51.2465, 4.4056],
             to: "Panama Canal, Panama",
+            to_coords: [9.0800, -79.6800],
             mode: "Sea",
             vehicle: "Container Ship MS Green Pioneer",
             company: "CMA CGM",
@@ -831,7 +906,9 @@ function App() {
           },
           {
             from: "Panama Canal, Panama",
+            from_coords: [9.0800, -79.6800],
             to: "Long Beach Port, USA",
+            to_coords: [33.7701, -118.1937],
             mode: "Sea",
             vehicle: "Container Ship MS Green Pioneer",
             company: "CMA CGM",
@@ -847,7 +924,9 @@ function App() {
           },
           {
             from: "Long Beach Port, USA",
+            from_coords: [33.7701, -118.1937],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Hybrid Truck HT-6200",
             company: "West Coast Green Logistics",
@@ -859,11 +938,8 @@ function App() {
           },
         ],
       },
-
-      // Add these routes after route id 12 in your App.jsx file
-      // New Air-only options to ensure we have fastest and cost-effective for air filter
       {
-        id: 13,
+        id: 12,
         modes: ["Air"],
         cost: 1950.5, // Cheaper air option to be cost-effective when filtering for air only
         transitTime: 3.5,
@@ -874,7 +950,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Berlin Tegel (TXL), Germany",
+            to_coords: [52.5548, 13.2925],
             mode: "Land",
             vehicle: "Electric Van GE-2200",
             company: "Berlin Express Logistics",
@@ -886,7 +964,9 @@ function App() {
           },
           {
             from: "Berlin Tegel (TXL), Germany",
+            from_coords: [52.5548, 13.2925],
             to: "London Heathrow (LHR), UK",
+            to_coords: [51.4700, -0.4543],
             mode: "Air",
             vehicle: "Airbus A300F",
             company: "Eurocargo Airways",
@@ -903,7 +983,9 @@ function App() {
           },
           {
             from: "London Heathrow (LHR), UK",
+            from_coords: [51.4700, -0.4543],
             to: "New York JFK (JFK), USA",
+            to_coords: [40.6413, -73.7781],
             mode: "Air",
             vehicle: "Boeing 747F",
             company: "TransAtlantic Cargo",
@@ -920,7 +1002,9 @@ function App() {
           },
           {
             from: "New York JFK (JFK), USA",
+            from_coords: [40.6413, -73.7781],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck US-8877",
             company: "East Coast Logistics",
@@ -933,7 +1017,7 @@ function App() {
         ],
       },
       {
-        id: 14,
+        id: 13,
         modes: ["Air"],
         cost: 2250.25,
         transitTime: 2.5, // Faster than other air options to be fastest when filtering air only
@@ -944,7 +1028,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Frankfurt Airport (FRA), Germany",
+            to_coords: [50.0379, 8.5622],
             mode: "Land",
             vehicle: "High-Speed Logistics Van",
             company: "Express Connect",
@@ -956,7 +1042,9 @@ function App() {
           },
           {
             from: "Frankfurt Airport (FRA), Germany",
+            from_coords: [50.0379, 8.5622],
             to: "New York JFK (JFK), USA",
+            to_coords: [40.6413, -73.7781],
             mode: "Air",
             vehicle: "Boeing 777X-F",
             company: "Lufthansa Premium Cargo",
@@ -975,7 +1063,9 @@ function App() {
           },
           {
             from: "New York JFK (JFK), USA",
+            from_coords: [40.6413, -73.7781],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Premium Delivery Van",
             company: "JFK Express Couriers",
@@ -988,10 +1078,8 @@ function App() {
           },
         ],
       },
-
-      // New Sea-only options to ensure we have fastest and cost-effective for sea filter
       {
-        id: 15,
+        id: 14,
         modes: ["Sea"],
         cost: 950.5, // Cheapest sea option
         transitTime: 26,
@@ -1002,7 +1090,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Rotterdam Port, Netherlands",
+            to_coords: [51.9225, 4.47917],
             mode: "Land",
             vehicle: "Truck RT-2233",
             company: "Euro Container Transport",
@@ -1014,7 +1104,9 @@ function App() {
           },
           {
             from: "Rotterdam Port, Netherlands",
+            from_coords: [51.9225, 4.47917],
             to: "Boston Harbor, USA",
+            to_coords: [42.3601, -71.0589],
             mode: "Sea",
             vehicle: "Container Ship MS Northern Star",
             company: "Maersk Economy Line",
@@ -1030,7 +1122,9 @@ function App() {
           },
           {
             from: "Boston Harbor, USA",
+            from_coords: [42.3601, -71.0589],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck US-4411",
             company: "Northeast Cargo Transport",
@@ -1043,7 +1137,7 @@ function App() {
         ],
       },
       {
-        id: 16,
+        id: 15,
         modes: ["Sea"],
         cost: 1250.75,
         transitTime: 19, // Faster sea option
@@ -1054,7 +1148,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Hamburg Port, Germany",
+            to_coords: [53.5511, 9.9937],
             mode: "Land",
             vehicle: "Truck HH-9980",
             company: "North German Logistics",
@@ -1066,7 +1162,9 @@ function App() {
           },
           {
             from: "Hamburg Port, Germany",
+            from_coords: [53.5511, 9.9937],
             to: "New York Harbor, USA",
+            to_coords: [40.7128, -74.0060],
             mode: "Sea",
             vehicle: "High-Speed Container Vessel MV Express Atlantic",
             company: "Hapag-Lloyd Express",
@@ -1083,7 +1181,9 @@ function App() {
           },
           {
             from: "New York Harbor, USA",
+            from_coords: [40.7128, -74.0060],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck FF-7744",
             company: "Fast Forward Logistics",
@@ -1095,10 +1195,8 @@ function App() {
           },
         ],
       },
-
-      // New Land-only options to ensure we have fastest and cost-effective for land filter
       {
-        id: 17,
+        id: 16,
         modes: ["Land"],
         cost: 1250.3, // Cheaper land option
         transitTime: 16,
@@ -1109,7 +1207,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Warsaw, Poland",
+            to_coords: [52.2297, 21.0122],
             mode: "Land",
             vehicle: "EcoTruck PL-5500",
             company: "Green Road Logistics",
@@ -1125,7 +1225,9 @@ function App() {
           },
           {
             from: "Warsaw, Poland",
+            from_coords: [52.2297, 21.0122],
             to: "Brest, Belarus",
+            to_coords: [52.0975, 23.6877],
             mode: "Land",
             vehicle: "Rail Cargo Connect",
             company: "EuroAsian Rail",
@@ -1141,7 +1243,9 @@ function App() {
           },
           {
             from: "Brest, Belarus",
+            from_coords: [52.0975, 23.6877],
             to: "Moscow, Russia",
+            to_coords: [55.7558, 37.6176],
             mode: "Land",
             vehicle: "Rail Cargo Express",
             company: "Russian Railways",
@@ -1157,7 +1261,9 @@ function App() {
           },
           {
             from: "Moscow, Russia",
+            from_coords: [55.7558, 37.6176],
             to: "Vladivostok, Russia",
+            to_coords: [43.1167, 131.8833],
             mode: "Land",
             vehicle: "Trans-Siberian Railway Budget Express",
             company: "Russian Railways",
@@ -1172,7 +1278,9 @@ function App() {
           },
           {
             from: "Vladivostok, Russia",
+            from_coords: [43.1167, 131.8833],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "Truck VL-2244",
             company: "Far East Logistics",
@@ -1185,7 +1293,7 @@ function App() {
         ],
       },
       {
-        id: 18,
+        id: 17,
         modes: ["Land"],
         cost: 1650.8,
         transitTime: 10, // Faster land option
@@ -1196,7 +1304,9 @@ function App() {
         detailedRoute: [
           {
             from: shipmentDetails.origin,
+            from_coords: [51.5074, 0.1278],
             to: "Berlin, Germany",
+            to_coords: [52.52, 13.405],
             mode: "Land",
             vehicle: "High-Speed Transfer Van",
             company: "Berlin Express",
@@ -1208,7 +1318,9 @@ function App() {
           },
           {
             from: "Berlin, Germany",
+            from_coords: [52.52, 13.405],
             to: "Budapest, Hungary",
+            to_coords: [47.4979, 19.0402],
             mode: "Land",
             vehicle: "Express Train Central Europe",
             company: "EU Express Railways",
@@ -1225,7 +1337,9 @@ function App() {
           },
           {
             from: "Budapest, Hungary",
+            from_coords: [47.4979, 19.0402],
             to: "Istanbul, Turkey",
+            to_coords: [41.0082, 28.9784],
             mode: "Land",
             vehicle: "Express Train Eastern Europe",
             company: "EuroTurk Railways",
@@ -1241,7 +1355,9 @@ function App() {
           },
           {
             from: "Istanbul, Turkey",
+            from_coords: [41.0082, 28.9784],
             to: shipmentDetails.destination,
+            to_coords: [51.5074, 0.1278],
             mode: "Land",
             vehicle: "High-Speed Rail Express",
             company: "Trans-Asian Railway Network",
@@ -1390,6 +1506,63 @@ function App() {
       description: "",
     });
   };
+
+  // Weather information display component - add this within your App component
+  function LocationWeather({ coords, location }) {
+    const { weatherData, loading, error } = useWeather(coords[0], coords[1]);
+
+    if (!coords) return null;
+    
+    return (
+      <div className="location-weather">
+        <h4 className="weather-location-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M8 5.4A4 4 0 0 1 12 4a4 4 0 0 1 4 1.4"></path>
+            <path d="M4 10h.01"></path>
+            <path d="M20 10h.01"></path>
+            <path d="M12 14a6 6 0 0 0-6-6h-.01a6 6 0 0 0-6 6h12.01A6 6 0 0 0 18 8h-.01a6 6 0 0 0-6 6"></path>
+          </svg>
+          Current Weather at {location}
+        </h4>
+        
+        {loading ? (
+          <div className="weather-loading">Loading weather data...</div>
+        ) : error ? (
+          <div className="weather-error">Weather data unavailable</div>
+        ) : weatherData ? (
+          <div className="weather-data-grid">
+            <div className="weather-data-item">
+              <span className="weather-data-label">Temperature</span>
+              <span className="weather-data-value">{weatherData.current.temperature2m}°C</span>
+            </div>
+            
+            <div className="weather-data-item">
+              <span className="weather-data-label">Rain</span>
+              <span className="weather-data-value">
+                {weatherData.current.rain} mm
+              </span>
+            </div>
+            
+            {weatherData.current.showers > 0 && (
+              <div className="weather-data-item">
+                <span className="weather-data-label">Showers</span>
+                <span className="weather-data-value">{weatherData.current.showers} mm</span>
+              </div>
+            )}
+            
+            {weatherData.current.snowfall > 0 && (
+              <div className="weather-data-item">
+                <span className="weather-data-label">Snowfall</span>
+                <span className="weather-data-value">{weatherData.current.snowfall} cm</span>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="weather-error">No weather data available</div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="shipping-app">
@@ -1767,6 +1940,14 @@ function App() {
                         </div>
                       </div>
                     )}
+                    {segment.from_coords && (
+  <div className="weather-section">
+    <LocationWeather 
+      coords={segment.from_coords}
+      location={segment.from}
+    />
+  </div>
+)}
                   </div>
                 </div>
               </div>

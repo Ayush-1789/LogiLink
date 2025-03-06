@@ -904,3 +904,85 @@ button {
   gap: 1.5rem;
   margin-top: 2rem;
 }
+
+/* Weather section styling */
+.weather-section {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px dashed #edf2f7;
+}
+
+.location-weather {
+  background-color: #f8fafc;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.weather-location-title {
+  display: flex;
+  align-items: center;
+  margin: 0 0 1rem;
+  font-size: 0.95rem;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.weather-location-title svg {
+  margin-right: 0.5rem;
+  color: #3182ce;
+}
+
+.weather-loading, .weather-error {
+  font-size: 0.9rem;
+  color: #718096;
+  padding: 0.5rem 0;
+  text-align: center;
+}
+
+.weather-error {
+  color: #e53e3e;
+}
+
+.weather-data-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.75rem;
+}
+
+.weather-data-item {
+  display: flex;
+  flex-direction: column;
+  background-color: white;
+  padding: 0.75rem;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.weather-data-label {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-bottom: 0.25rem;
+}
+
+.weather-data-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+/* Add styling for different weather condition indicators */
+.temperature-value {
+  color: #dd6b20; /* Orange for temperature */
+}
+
+.rain-value {
+  color: #3182ce; /* Blue for rain */
+}
+
+.snow-value {
+  color: #718096; /* Gray for snow */
+}
+
+.showers-value {
+  color: #4299e1; /* Light blue for showers */
+}
