@@ -1,0 +1,25 @@
+Source Airport,Destination Airport,Carrier Name,Distance (km),Estimated Time (hours),Estimated Cost (INR/kg)
+DEL,ATL,Emirates SkyCargo,13200,16.0,337.5
+BOM,LAX,Qatar Airways Cargo,14000,18.0,375.0
+BLR,ORD,Cathay Pacific Cargo,13500,17.0,360.0
+MAA,DFW,UPS Air Cargo,14500,19.0,375.0
+HYD,JFK,Air India Cargo,12800,15.0,337.5
+CCU,MIA,Emirates SkyCargo,14200,18.0,375.0
+COK,SFO,Qatar Airways Cargo,14800,19.0,375.0
+DEL,DXB,Emirates SkyCargo,2200,4.0,187.5
+BOM,AUH,Etihad Cargo,2000,3.5,180.0
+BLR,SHJ,Air Arabia Cargo,2300,4.0,187.5
+MAA,AMS,KLM Cargo,7900,10.0,315.0
+HYD,RTM,Turkish Airlines Cargo,8100,10.5,330.0
+CCU,EIN,Lufthansa Cargo,7700,9.5,315.0
+DEL,PEK,Air China Cargo,3900,5.0,225.0
+BOM,PVG,China Eastern Cargo,4200,5.5,240.0
+BLR,CAN,China Southern Cargo,3800,5.0,225.0
+MAA,SZX,Shenzhen Airlines Cargo,4000,5.5,240.0
+HYD,CTU,Sichuan Airlines Cargo,4100,5.5,240.0
+CCU,HKG,Cathay Pacific Cargo,2600,4.0,187.5
+DEL,LHR,British Airways Cargo,6700,8.0,300.0
+BOM,LGW,Virgin Atlantic Cargo,6800,8.0,300.0
+BLR,MAN,Emirates SkyCargo,7200,9.0,315.0
+MAA,BHX,Qatar Airways Cargo,7100,9.0,315.0
+HYD,EDI,Etihad Cargo,7400,9.5,330.0

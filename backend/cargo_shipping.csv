@@ -1,0 +1,14 @@
+Source Port,Destination Port,Carrier Name,Distance (km),Estimated Time (days),Estimated Cost (INR/kg)
+Jawaharlal Nehru Port,Port of Los Angeles,Maersk Line,14000,28,7.13
+Mundra Port,Port of Long Beach,MSC,14100,28,7.13
+Chennai Port,Port of New York/New Jersey,CMA CGM,13800,27,7.13
+Kolkata Port,Port of Savannah,Hapag-Lloyd,14500,29,7.13
+Kandla Port,Port of Houston,COSCO Shipping,15000,30,7.13
+Visakhapatnam Port,Port of Seattle-Tacoma,Evergreen Marine,13700,27,7.13
+Jawaharlal Nehru Port,Port of Jebel Ali,Maersk Line,2300,5,7.13
+Mundra Port,Port Rashid,MSC,2400,5,7.13
+Chennai Port,Port Khalifa,CMA CGM,2200,5,7.13
+Kolkata Port,Port of Fujairah,Hapag-Lloyd,2500,6,7.13
+Kandla Port,Port of Rotterdam,COSCO Shipping,7800,20,7.13
+Visakhapatnam Port,Port of Amsterdam,Evergreen Marine,7900,20,7.13
+Jawaharlal Nehru Port,Port of Moerdijk,Maersk Line,7700,19,7.13
