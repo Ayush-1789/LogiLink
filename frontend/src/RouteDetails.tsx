@@ -20,7 +20,9 @@ export default function RouteDetails() {
 
   const navigate = useNavigate();
 
-  const calculateRouteStats = (detailedRoutes: DetailedRoute[]) => {
+  // TODO
+  const calculateRouteStats = (detailedRoutes: DetailedRoute[]): RouteStats => {
+    console.log(detailedRoutes);
     return { totalDistance: 0, totalBorderCrossings: 0 };
   };
 

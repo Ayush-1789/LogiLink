@@ -10,9 +10,7 @@ export default function Results() {
 
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
 
-  const [routeOptions, setRouteOptions] = useState<Route[]>(
-    getMockRoutes(shipmentDetails),
-  );
+  const routeOptions = getMockRoutes(shipmentDetails);
 
   const navigate = useNavigate();
 
