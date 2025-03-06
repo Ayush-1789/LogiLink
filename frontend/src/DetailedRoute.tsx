@@ -17,7 +17,8 @@ export type DetailedRoute = {
   refrigerated?: boolean;
   temperature?: string;
   security?: string;
-  fromCoords?: string;
+  priority?: string;
+  fromCoords?: number[];
   expedited?: boolean;
   trainDetails?: TrainDetails;
   flightDetails?: FlightDetails;

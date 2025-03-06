@@ -24,7 +24,7 @@ export type Shipment = {
 export default function Home() {
   const navigate = useNavigate();
 
-  const schema: yup.SchemaOf<Shipment> = yup.object({
+  const schema = yup.object({
     origin: yup.string().required(),
     destination: yup.string().required(),
     weight: yup.string().required(),

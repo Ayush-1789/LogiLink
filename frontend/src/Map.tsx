@@ -9,11 +9,11 @@ import {
 import "leaflet/dist/leaflet.css";
 
 export default function Map() {
-  const pointA = [51.505, -0.09];
-  const pointB = [51.7, -0.2];
+  const pointA: [number, number] = [51.505, -0.09];
+  const pointB: [number, number] = [51.7, -0.2];
 
-  const pointC = [51.44, -0.2];
-  const pointD = [51.65, -0.05];
+  const pointC: [number, number] = [51.44, -0.2];
+  const pointD: [number, number] = [51.65, -0.05];
 
   const segments = [
     { positions: [pointA, pointC], color: "green", label: "Land route" },

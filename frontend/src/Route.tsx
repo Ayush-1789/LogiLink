@@ -10,5 +10,6 @@ export type Route = {
   reliability: string;
   borderCrossings: number;
   category: string;
+  specializedFor?: string;
   detailedRoute: DetailedRoute[];
 };

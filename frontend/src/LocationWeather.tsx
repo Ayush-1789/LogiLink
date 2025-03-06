@@ -1,7 +1,16 @@
 import React from "react";
 import { useWeather } from "./Weather";
+import { AppLoadContext } from "react-router";
 
-export default function LocationWeather({ coords, location }) {
+type LocationWeatherProps = {
+  coords: number[];
+  location: string;
+};
+
+export default function LocationWeather({
+  coords,
+  location,
+}: LocationWeatherProps) {
   const { weatherData, loading, error } = useWeather(coords[0], coords[1]);
 
   if (!coords) return null;
