@@ -633,6 +633,7 @@ export default function getMockRoutes(shipmentDetails: Shipment): Route[] {
       detailedRoute: [
         {
           from: shipmentDetails.origin,
+          fromCoords: [51.505, -0.09],
           to: "Amsterdam Schiphol (AMS), Netherlands",
           mode: "Land",
           vehicle: "Refrigerated Truck RF-5500",
