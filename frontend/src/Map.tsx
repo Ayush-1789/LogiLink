@@ -1,3 +1,4 @@
+import React from "react";
 import {
   MapContainer,
   TileLayer,
@@ -48,7 +49,7 @@ export default function Map() {
         <Popup>Intermediary Point 2</Popup>
       </Marker>
       {segments.map((segment, index) => (
-        <>
+        <React.Fragment key={index}>
           <Polyline
             key={index}
             positions={segment.positions}
@@ -66,7 +67,7 @@ export default function Map() {
               <span>{segment.label}</span>
             </Tooltip>
           </Polyline>
-        </>
+        </React.Fragment>
       ))}
     </MapContainer>
   );
