@@ -20,10 +20,16 @@ export default function RouteDetails() {
 
   const navigate = useNavigate();
 
-  // TODO
   const calculateRouteStats = (detailedRoutes: DetailedRoute[]): RouteStats => {
-    console.log(detailedRoutes);
-    return { totalDistance: 0, totalBorderCrossings: 0 };
+    let totalDistance = 0;
+    let totalBorderCrossings = 0;
+
+    detailedRoutes.forEach((segment) => {
+      totalDistance += parseInt(segment.distance.replace(/,/g, ""));
+      if (segment.borderCrossing) totalBorderCrossings += 1;
+    });
+
+    return { totalDistance, totalBorderCrossings };
   };
 
   return (
