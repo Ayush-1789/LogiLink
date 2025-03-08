@@ -3,10 +3,17 @@ from routing import get_routing
 from enum import Enum
 import uvicorn
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI()
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Adjust this to your needs
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 class Segment(BaseModel):
     start: str
@@ -77,5 +84,9 @@ async def routes(source: str,
 
     return routes
 
+@app.get("/")
+async def root():
+    return {"message": "Hello World"}
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8001)
