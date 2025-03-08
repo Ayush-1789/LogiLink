@@ -1,9 +1,10 @@
 const BASE_URL = "http://localhost:8000";
 
 enum Priority {
-  COST = "1",
-  TIME = "2",
-  BALANCED = "3",
+  COST = "cost",
+  TIME = "time",
+  ECO = "eco",
+  BALANCED = "balanced",
 }
 
 enum GoodsType {

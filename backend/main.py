@@ -49,9 +49,10 @@ class Route(BaseModel):
 
 
 class Priority(str, Enum):
-    COST = "1"
-    TIME = "2"
-    BALANCED = "3"
+    COST = "cost"
+    TIME = "time"
+    ECO = "eco"
+    BALANCED = "balanced"
 
 
 class GoodsType(str, Enum):
