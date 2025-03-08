@@ -135,24 +135,20 @@ export default function LocationWeather({
               {weatherData.current.rain} mm
             </span>
           </div>
+          <div className="weather-data-item">
+            <span className="weather-data-label">Snowfall</span>
+            <span className="weather-data-value">
+              {weatherData.current.snowfall} mm
+            </span>
+          </div>
+          <div className="weather-data-item">
+            <span className="weather-data-label">Showers</span>
+            <span className="weather-data-value">
+              {weatherData.current.showers} mm
+            </span>
+          </div>
 
-          {weatherData.current.showers > 0 && (
-            <div className="weather-data-item">
-              <span className="weather-data-label">Showers</span>
-              <span className="weather-data-value">
-                {weatherData.current.showers} mm
-              </span>
-            </div>
-          )}
 
-          {weatherData.current.snowfall > 0 && (
-            <div className="weather-data-item">
-              <span className="weather-data-label">Snowfall</span>
-              <span className="weather-data-value">
-                {weatherData.current.snowfall} cm
-              </span>
-            </div>
-          )}
         </div>
       ) : (
         <div className="weather-error">No weather data available</div>

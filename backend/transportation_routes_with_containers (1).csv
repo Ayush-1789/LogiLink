@@ -1,0 +1,291 @@
+Source,Destination,Distance (km),Transport Mode,Container Type,Load Weight (kg),Volume (m³),Type of Goods,Fuel Price (INR/L),Route Cost (INR)
+Delhi Airport,Mumbai Airport,7086,air,LD3 Container,858.7,0.0006484139999999999,oversized,100,2590818.75
+Delhi Airport,Bangalore Airport,5143,air,LD3 Container,1258.47,0.0006484139999999999,perishable,100,1494684.38
+Delhi Airport,JFK Airport,3105,air,LD7 Pallet,5854.93,0.0021079159999999996,perishable,100,902390.62
+Delhi Airport,LAX Airport,6787,air,LD3 Container,797.19,0.0006484139999999999,hazardous,100,2099728.12
+Delhi Airport,ORD Airport,6293,air,LD7 Pallet,1063.68,0.0021079159999999996,standard,100,1474921.88
+Delhi Airport,Heathrow Airport,2476,air,LD3 Container,719.8,0.0006484139999999999,oversized,100,905287.5
+Delhi Airport,Manchester Airport,6102,air,LD7 Pallet,5084.63,0.0021079159999999996,standard,100,1430156.25
+Delhi Airport,Dubai Airport,1608,air,LD3 Container,1004.94,0.0006484139999999999,perishable,100,467325.0
+Delhi Airport,Abu Dhabi Airport,5667,air,LD7 Pallet,4025.83,0.0021079159999999996,hazardous,100,1753228.12
+Delhi Airport,Schiphol Airport,2142,air,LD3 Container,1272.59,0.0006484139999999999,standard,100,502031.25
+Delhi Airport,Beijing Airport,1638,air,LD3 Container,624.64,0.0006484139999999999,oversized,100,598893.75
+Delhi Airport,Shanghai Airport,316,air,LD7 Pallet,874.11,0.0021079159999999996,oversized,100,115537.5
+Mumbai Airport,Delhi Airport,2664,air,LD3 Container,700.01,0.0006484139999999999,perishable,100,774225.0
+Mumbai Airport,Bangalore Airport,710,air,LD3 Container,663.69,0.0006484139999999999,hazardous,100,219656.25
+Mumbai Airport,JFK Airport,6100,air,LD7 Pallet,2200.41,0.0021079159999999996,fragile,100,1658437.5
+Mumbai Airport,LAX Airport,4649,air,LD7 Pallet,4994.55,0.0021079159999999996,standard,100,1089609.38
+Mumbai Airport,ORD Airport,5516,air,LD3 Container,1506.26,0.0006484139999999999,high_value,100,1447950.0
+Mumbai Airport,Heathrow Airport,2229,air,LD7 Pallet,6566.54,0.0021079159999999996,standard,100,522421.88
+Mumbai Airport,Manchester Airport,3512,air,LD7 Pallet,4778.92,0.0021079159999999996,standard,100,823125.0
+Mumbai Airport,Dubai Airport,4456,air,LD3 Container,776.95,0.0006484139999999999,oversized,100,1629225.0
+Mumbai Airport,Abu Dhabi Airport,3363,air,LD3 Container,927.37,0.0006484139999999999,high_value,100,882787.5
+Mumbai Airport,Schiphol Airport,5859,air,LD3 Container,1006.74,0.0006484139999999999,hazardous,100,1812628.12
+Mumbai Airport,Beijing Airport,7438,air,LD3 Container,1323.82,0.0006484139999999999,perishable,100,2161668.75
+Mumbai Airport,Shanghai Airport,5898,air,LD7 Pallet,658.21,0.0021079159999999996,fragile,100,1603518.75
+Bangalore Airport,Delhi Airport,3103,air,LD3 Container,757.66,0.0006484139999999999,hazardous,100,959990.62
+Bangalore Airport,Mumbai Airport,4018,air,LD3 Container,1288.57,0.0006484139999999999,oversized,100,1469081.25
+Bangalore Airport,JFK Airport,1775,air,LD3 Container,1192.69,0.0006484139999999999,hazardous,100,549140.62
+Bangalore Airport,LAX Airport,8000,air,LD3 Container,1302.58,0.0006484139999999999,perishable,100,2325000.0
+Bangalore Airport,ORD Airport,963,air,LD3 Container,507.36,0.0006484139999999999,oversized,100,352096.88
+Bangalore Airport,Heathrow Airport,2776,air,LD3 Container,1096.41,0.0006484139999999999,high_value,100,728700.0
+Bangalore Airport,Manchester Airport,6538,air,LD3 Container,1529.7,0.0006484139999999999,fragile,100,1777518.75
+Bangalore Airport,Dubai Airport,3749,air,LD7 Pallet,3326.05,0.0021079159999999996,perishable,100,1089553.12
+Bangalore Airport,Abu Dhabi Airport,2455,air,LD3 Container,1519.34,0.0006484139999999999,high_value,100,644437.5
+Bangalore Airport,Schiphol Airport,2098,air,LD7 Pallet,5857.73,0.0021079159999999996,high_value,100,550725.0
+Bangalore Airport,Beijing Airport,1183,air,LD3 Container,927.9,0.0006484139999999999,oversized,100,432534.38
+Bangalore Airport,Shanghai Airport,5074,air,LD7 Pallet,732.27,0.0021079159999999996,hazardous,100,1569768.75
+Mumbai Port,Chennai Port,2744,sea,20ft TEU,8147.18,38.296775999999994,oversized,100,190365.0
+Mumbai Port,Port of LA,4104,sea,20ft TEU,16610.32,38.296775999999994,high_value,100,200070.0
+Mumbai Port,Port of NY/NJ,4592,sea,40ft FEU,15968.7,77.035924,high_value,100,223860.0
+Mumbai Port,Port of Felixstowe,5473,sea,40ft FEU,23323.03,77.035924,fragile,100,277070.62
+Mumbai Port,Port of Southampton,5360,sea,40ft FEU,9735.04,77.035924,oversized,100,371850.0
+Mumbai Port,Jebel Ali Port,2432,sea,20ft TEU,17308.23,38.296775999999994,perishable,100,132240.0
+Mumbai Port,Port Rashid,2353,sea,40ft FEU,9091.93,77.035924,standard,100,101473.12
+Mumbai Port,Port of Rotterdam,3769,sea,40ft FEU,30253.67,77.035924,perishable,100,204939.38
+Mumbai Port,Port of Shanghai,4964,sea,40ft FEU,11534.11,77.035924,hazardous,100,288532.5
+Mumbai Port,Port of Shenzhen,957,sea,20ft TEU,10972.8,38.296775999999994,standard,100,41270.62
+Chennai Port,Mumbai Port,6088,sea,40ft FEU,29625.79,77.035924,hazardous,100,353865.0
+Chennai Port,Port of LA,7086,sea,40ft FEU,1981.64,77.035924,fragile,100,358728.75
+Chennai Port,Port of NY/NJ,7435,sea,20ft TEU,5928.8,38.296775999999994,high_value,100,362456.25
+Chennai Port,Port of Felixstowe,3780,sea,40ft FEU,10565.22,77.035924,high_value,100,184275.0
+Chennai Port,Port of Southampton,5885,sea,40ft FEU,1956.32,77.035924,hazardous,100,342065.62
+Chennai Port,Jebel Ali Port,187,sea,20ft TEU,27151.7,38.296775999999994,standard,100,8064.38
+Chennai Port,Port Rashid,1436,sea,40ft FEU,30310.3,77.035924,standard,100,61927.5
+Chennai Port,Port of Rotterdam,475,sea,20ft TEU,28194.94,38.296775999999994,hazardous,100,27609.38
+Chennai Port,Port of Shanghai,1887,sea,40ft FEU,15292.38,77.035924,perishable,100,102605.63
+Chennai Port,Port of Shenzhen,4016,sea,20ft TEU,23152.57,38.296775999999994,high_value,100,195780.0
+Delhi,Mumbai,7321,road,20ft Container,29393.15,38.296775999999994,perishable,100,796158.75
+Delhi,Chennai,7344,road,40ft Container,32109.26,77.035924,standard,100,633420.0
+Mumbai,Delhi,2740,road,20ft Container,9064.55,38.296775999999994,standard,100,236325.0
+Mumbai,Chennai,7067,road,20ft Container,5862.46,38.296775999999994,oversized,100,980546.25
+Chennai,Delhi,1116,road,40ft Container,21825.46,77.035924,perishable,100,121365.0
+Chennai,Mumbai,7040,road,20ft Container,27006.93,38.296775999999994,standard,100,607200.0
+JFK Airport,Delhi Airport,1704,air,LD7 Pallet,1162.01,0.0021079159999999996,oversized,90,623025.0
+JFK Airport,Mumbai Airport,6040,air,LD3 Container,821.33,0.0006484139999999999,hazardous,90,1868625.0
+JFK Airport,Bangalore Airport,4067,air,LD7 Pallet,867.56,0.0021079159999999996,oversized,90,1486996.88
+JFK Airport,LAX Airport,2758,air,LD7 Pallet,4036.79,0.0021079159999999996,perishable,90,801543.75
+JFK Airport,ORD Airport,7050,air,LD3 Container,1184.37,0.0006484139999999999,standard,90,1652343.75
+JFK Airport,Heathrow Airport,2558,air,LD7 Pallet,5754.12,0.0021079159999999996,perishable,90,743418.75
+JFK Airport,Manchester Airport,6993,air,LD3 Container,1280.51,0.0006484139999999999,hazardous,90,2163459.38
+JFK Airport,Dubai Airport,4582,air,LD7 Pallet,3228.71,0.0021079159999999996,perishable,90,1331643.75
+JFK Airport,Abu Dhabi Airport,5497,air,LD7 Pallet,1705.25,0.0021079159999999996,hazardous,90,1700634.38
+JFK Airport,Schiphol Airport,935,air,LD3 Container,1553.26,0.0006484139999999999,standard,90,219140.62
+JFK Airport,Beijing Airport,3238,air,LD7 Pallet,1335.83,0.0021079159999999996,fragile,90,880331.25
+JFK Airport,Shanghai Airport,7710,air,LD7 Pallet,1970.77,0.0021079159999999996,perishable,90,2240718.75
+LAX Airport,Delhi Airport,7601,air,LD7 Pallet,4979.02,0.0021079159999999996,high_value,90,1995262.5
+LAX Airport,Mumbai Airport,6507,air,LD7 Pallet,4306.54,0.0021079159999999996,standard,90,1525078.12
+LAX Airport,Bangalore Airport,1864,air,LD7 Pallet,3775.46,0.0021079159999999996,standard,90,436875.0
+LAX Airport,JFK Airport,4790,air,LD7 Pallet,3085.62,0.0021079159999999996,perishable,90,1392093.75
+LAX Airport,ORD Airport,5886,air,LD7 Pallet,5463.59,0.0021079159999999996,standard,90,1379531.25
+LAX Airport,Heathrow Airport,5779,air,LD3 Container,1554.07,0.0006484139999999999,fragile,90,1571165.62
+LAX Airport,Manchester Airport,4596,air,LD3 Container,849.83,0.0006484139999999999,standard,90,1077187.5
+LAX Airport,Dubai Airport,3427,air,LD3 Container,1319.42,0.0006484139999999999,hazardous,90,1060228.12
+LAX Airport,Abu Dhabi Airport,2222,air,LD7 Pallet,5186.53,0.0021079159999999996,fragile,90,604106.25
+LAX Airport,Schiphol Airport,1175,air,LD3 Container,904.27,0.0006484139999999999,fragile,90,319453.12
+LAX Airport,Beijing Airport,4131,air,LD3 Container,620.74,0.0006484139999999999,standard,90,968203.12
+LAX Airport,Shanghai Airport,761,air,LD7 Pallet,5475.31,0.0021079159999999996,oversized,90,278240.62
+ORD Airport,Delhi Airport,2362,air,LD3 Container,1144.38,0.0006484139999999999,hazardous,90,730743.75
+ORD Airport,Mumbai Airport,4366,air,LD3 Container,932.03,0.0006484139999999999,oversized,90,1596318.75
+ORD Airport,Bangalore Airport,3433,air,LD3 Container,1406.24,0.0006484139999999999,perishable,90,997715.62
+ORD Airport,JFK Airport,1511,air,LD3 Container,1218.42,0.0006484139999999999,high_value,90,396637.5
+ORD Airport,LAX Airport,1095,air,LD7 Pallet,6641.81,0.0021079159999999996,oversized,90,400359.38
+ORD Airport,Heathrow Airport,340,air,LD3 Container,1078.99,0.0006484139999999999,hazardous,90,105187.5
+ORD Airport,Manchester Airport,1777,air,LD7 Pallet,6212.11,0.0021079159999999996,standard,90,416484.38
+ORD Airport,Dubai Airport,7912,air,LD7 Pallet,2773.91,0.0021079159999999996,hazardous,90,2447775.0
+ORD Airport,Abu Dhabi Airport,6120,air,LD7 Pallet,1796.36,0.0021079159999999996,perishable,90,1778625.0
+ORD Airport,Schiphol Airport,5679,air,LD3 Container,595.63,0.0006484139999999999,high_value,90,1490737.5
+ORD Airport,Beijing Airport,1645,air,LD3 Container,1455.28,0.0006484139999999999,perishable,90,478078.12
+ORD Airport,Shanghai Airport,4898,air,LD7 Pallet,4985.57,0.0021079159999999996,hazardous,90,1515318.75
+Port of LA,Mumbai Port,2054,sea,20ft TEU,7171.79,38.296775999999994,oversized,90,142496.25
+Port of LA,Chennai Port,472,sea,40ft FEU,6097.65,77.035924,oversized,90,32745.0
+Port of LA,Port of NY/NJ,5417,sea,20ft TEU,1027.29,38.296775999999994,high_value,90,264078.75
+Port of LA,Port of Felixstowe,7773,sea,40ft FEU,31529.56,77.035924,perishable,90,422656.88
+Port of LA,Port of Southampton,4324,sea,20ft TEU,8564.64,38.296775999999994,perishable,90,235117.5
+Port of LA,Jebel Ali Port,867,sea,40ft FEU,25450.19,77.035924,oversized,90,60148.12
+Port of LA,Port Rashid,2092,sea,40ft FEU,18856.89,77.035924,high_value,90,101985.0
+Port of LA,Port of Rotterdam,7166,sea,20ft TEU,10755.5,38.296775999999994,standard,90,309033.75
+Port of LA,Port of Shanghai,4748,sea,40ft FEU,24858.44,77.035924,high_value,90,231465.0
+Port of LA,Port of Shenzhen,2626,sea,20ft TEU,17560.74,38.296775999999994,fragile,90,132941.25
+Port of NY/NJ,Mumbai Port,4379,sea,40ft FEU,12005.45,77.035924,high_value,90,213476.25
+Port of NY/NJ,Chennai Port,6952,sea,20ft TEU,26649.33,38.296775999999994,high_value,90,338910.0
+Port of NY/NJ,Port of LA,6351,sea,20ft TEU,20692.26,38.296775999999994,fragile,90,321519.37
+Port of NY/NJ,Port of Felixstowe,6986,sea,40ft FEU,25678.49,77.035924,high_value,90,340567.5
+Port of NY/NJ,Port of Southampton,2245,sea,20ft TEU,24790.69,38.296775999999994,oversized,90,155746.88
+Port of NY/NJ,Jebel Ali Port,7969,sea,40ft FEU,25390.01,77.035924,high_value,90,388488.75
+Port of NY/NJ,Port Rashid,7982,sea,40ft FEU,7964.98,77.035924,hazardous,90,463953.75
+Port of NY/NJ,Port of Rotterdam,6997,sea,40ft FEU,2479.4,77.035924,hazardous,90,406700.62
+Port of NY/NJ,Port of Shanghai,1504,sea,40ft FEU,662.4,77.035924,hazardous,90,87420.0
+Port of NY/NJ,Port of Shenzhen,6217,sea,20ft TEU,7026.65,38.296775999999994,fragile,90,314735.62
+New York,Los Angeles,5088,road,40ft Container,30509.09,77.035924,standard,90,438840.0
+New York,Chicago,4762,road,20ft Container,863.17,38.296775999999994,perishable,90,517867.5
+Los Angeles,New York,5667,road,20ft Container,11140.2,38.296775999999994,oversized,90,786296.25
+Los Angeles,Chicago,4807,road,40ft Container,24620.68,77.035924,perishable,90,522761.25
+Chicago,New York,4888,road,20ft Container,24570.43,38.296775999999994,perishable,90,531570.0
+Chicago,Los Angeles,489,road,20ft Container,27393.21,38.296775999999994,high_value,90,47677.5
+Heathrow Airport,Delhi Airport,1135,air,LD3 Container,537.47,0.0006484139999999999,standard,120,266015.62
+Heathrow Airport,Mumbai Airport,768,air,LD7 Pallet,1088.74,0.0021079159999999996,high_value,120,201600.0
+Heathrow Airport,Bangalore Airport,169,air,LD7 Pallet,2185.64,0.0021079159999999996,hazardous,120,52284.38
+Heathrow Airport,JFK Airport,2243,air,LD7 Pallet,4316.78,0.0021079159999999996,oversized,120,820096.88
+Heathrow Airport,LAX Airport,5046,air,LD7 Pallet,5445.04,0.0021079159999999996,standard,120,1182656.25
+Heathrow Airport,ORD Airport,7134,air,LD7 Pallet,4587.35,0.0021079159999999996,high_value,120,1872675.0
+Heathrow Airport,Manchester Airport,7368,air,LD7 Pallet,5747.58,0.0021079159999999996,standard,120,1726875.0
+Heathrow Airport,Dubai Airport,4913,air,LD3 Container,1018.8,0.0006484139999999999,high_value,120,1289662.5
+Heathrow Airport,Abu Dhabi Airport,5453,air,LD3 Container,1187.33,0.0006484139999999999,high_value,120,1431412.5
+Heathrow Airport,Schiphol Airport,2285,air,LD7 Pallet,2845.72,0.0021079159999999996,fragile,120,621234.38
+Heathrow Airport,Beijing Airport,4442,air,LD3 Container,549.63,0.0006484139999999999,high_value,120,1166025.0
+Heathrow Airport,Shanghai Airport,2884,air,LD7 Pallet,1656.07,0.0021079159999999996,high_value,120,757050.0
+Manchester Airport,Delhi Airport,7527,air,LD3 Container,867.94,0.0006484139999999999,oversized,120,2752059.38
+Manchester Airport,Mumbai Airport,4604,air,LD7 Pallet,2815.78,0.0021079159999999996,hazardous,120,1424362.5
+Manchester Airport,Bangalore Airport,1716,air,LD3 Container,1269.15,0.0006484139999999999,oversized,120,627412.5
+Manchester Airport,JFK Airport,3986,air,LD3 Container,1267.86,0.0006484139999999999,hazardous,120,1233168.75
+Manchester Airport,LAX Airport,5870,air,LD3 Container,1189.5,0.0006484139999999999,standard,120,1375781.25
+Manchester Airport,ORD Airport,7541,air,LD7 Pallet,500.46,0.0021079159999999996,hazardous,120,2332996.88
+Manchester Airport,Heathrow Airport,7340,air,LD3 Container,1078.22,0.0006484139999999999,standard,120,1720312.5
+Manchester Airport,Dubai Airport,4477,air,LD3 Container,894.13,0.0006484139999999999,fragile,120,1217184.38
+Manchester Airport,Abu Dhabi Airport,2843,air,LD7 Pallet,4667.49,0.0021079159999999996,standard,120,666328.12
+Manchester Airport,Schiphol Airport,2098,air,LD7 Pallet,1700.56,0.0021079159999999996,standard,120,491718.75
+Manchester Airport,Beijing Airport,5712,air,LD7 Pallet,5085.18,0.0021079159999999996,high_value,120,1499400.0
+Manchester Airport,Shanghai Airport,3840,air,LD3 Container,580.6,0.0006484139999999999,standard,120,900000.0
+Port of Felixstowe,Mumbai Port,442,sea,40ft FEU,17267.73,77.035924,perishable,120,24033.75
+Port of Felixstowe,Chennai Port,5906,sea,40ft FEU,4313.04,77.035924,perishable,120,321138.75
+Port of Felixstowe,Port of LA,3718,sea,20ft TEU,11068.78,38.296775999999994,oversized,120,257936.25
+Port of Felixstowe,Port of NY/NJ,7238,sea,20ft TEU,21347.57,38.296775999999994,oversized,120,502136.25
+Port of Felixstowe,Port of Southampton,4502,sea,40ft FEU,27246.18,77.035924,oversized,120,312326.25
+Port of Felixstowe,Jebel Ali Port,2745,sea,20ft TEU,9064.35,38.296775999999994,hazardous,120,159553.12
+Port of Felixstowe,Port Rashid,6803,sea,40ft FEU,24850.59,77.035924,fragile,120,344401.88
+Port of Felixstowe,Port of Rotterdam,1267,sea,40ft FEU,10576.68,77.035924,perishable,120,68893.12
+Port of Felixstowe,Port of Shanghai,7541,sea,20ft TEU,13946.86,38.296775999999994,high_value,120,367623.75
+Port of Felixstowe,Port of Shenzhen,7389,sea,20ft TEU,22201.5,38.296775999999994,perishable,120,401776.88
+Port of Southampton,Mumbai Port,6185,sea,40ft FEU,27678.96,77.035924,standard,120,266728.12
+Port of Southampton,Chennai Port,7286,sea,40ft FEU,31173.43,77.035924,standard,120,314208.75
+Port of Southampton,Port of LA,2941,sea,20ft TEU,21737.77,38.296775999999994,hazardous,120,170945.62
+Port of Southampton,Port of NY/NJ,7599,sea,20ft TEU,10756.04,38.296775999999994,fragile,120,384699.38
+Port of Southampton,Port of Felixstowe,7242,sea,40ft FEU,18413.81,77.035924,standard,120,312311.25
+Port of Southampton,Jebel Ali Port,6132,sea,20ft TEU,18765.5,38.296775999999994,standard,120,264442.5
+Port of Southampton,Port Rashid,4705,sea,40ft FEU,13404.15,77.035924,high_value,120,229368.75
+Port of Southampton,Port of Rotterdam,7986,sea,20ft TEU,11478.08,38.296775999999994,hazardous,120,464186.25
+Port of Southampton,Port of Shanghai,7685,sea,40ft FEU,13700.47,77.035924,perishable,120,417871.88
+Port of Southampton,Port of Shenzhen,602,sea,40ft FEU,20645.8,77.035924,standard,120,25961.25
+London,Manchester,5134,road,20ft Container,29558.32,38.296775999999994,fragile,120,519817.5
+Manchester,London,3237,road,40ft Container,2902.96,77.035924,fragile,120,327746.25
+Dubai Airport,Delhi Airport,2862,air,LD7 Pallet,1633.88,0.0021079159999999996,high_value,80,751275.0
+Dubai Airport,Mumbai Airport,2263,air,LD7 Pallet,4545.11,0.0021079159999999996,standard,80,530390.62
+Dubai Airport,Bangalore Airport,3272,air,LD3 Container,629.71,0.0006484139999999999,standard,80,766875.0
+Dubai Airport,JFK Airport,6133,air,LD3 Container,1274.7,0.0006484139999999999,high_value,80,1609912.5
+Dubai Airport,LAX Airport,7121,air,LD3 Container,1037.72,0.0006484139999999999,oversized,80,2603615.62
+Dubai Airport,ORD Airport,2877,air,LD7 Pallet,1833.03,0.0021079159999999996,perishable,80,836128.12
+Dubai Airport,Heathrow Airport,7826,air,LD7 Pallet,1079.19,0.0021079159999999996,hazardous,80,2421168.75
+Dubai Airport,Manchester Airport,4696,air,LD7 Pallet,1187.07,0.0021079159999999996,standard,80,1100625.0
+Dubai Airport,Abu Dhabi Airport,340,air,LD7 Pallet,5520.58,0.0021079159999999996,high_value,80,89250.0
+Dubai Airport,Schiphol Airport,3149,air,LD3 Container,745.07,0.0006484139999999999,high_value,80,826612.5
+Dubai Airport,Beijing Airport,570,air,LD3 Container,1325.95,0.0006484139999999999,standard,80,133593.75
+Dubai Airport,Shanghai Airport,7545,air,LD3 Container,896.9,0.0006484139999999999,standard,80,1768359.38
+Abu Dhabi Airport,Delhi Airport,5907,air,LD3 Container,1457.68,0.0006484139999999999,hazardous,80,1827478.12
+Abu Dhabi Airport,Mumbai Airport,3411,air,LD7 Pallet,2594.28,0.0021079159999999996,hazardous,80,1055278.12
+Abu Dhabi Airport,Bangalore Airport,4779,air,LD3 Container,944.93,0.0006484139999999999,standard,80,1120078.12
+Abu Dhabi Airport,JFK Airport,3936,air,LD7 Pallet,4355.69,0.0021079159999999996,high_value,80,1033200.0
+Abu Dhabi Airport,LAX Airport,4968,air,LD7 Pallet,1837.84,0.0021079159999999996,oversized,80,1816425.0
+Abu Dhabi Airport,ORD Airport,3210,air,LD3 Container,909.83,0.0006484139999999999,hazardous,80,993093.75
+Abu Dhabi Airport,Heathrow Airport,3303,air,LD3 Container,1105.05,0.0006484139999999999,oversized,80,1207659.38
+Abu Dhabi Airport,Manchester Airport,1683,air,LD3 Container,869.5,0.0006484139999999999,perishable,80,489121.88
+Abu Dhabi Airport,Dubai Airport,5732,air,LD7 Pallet,3874.24,0.0021079159999999996,standard,80,1343437.5
+Abu Dhabi Airport,Schiphol Airport,2336,air,LD3 Container,684.61,0.0006484139999999999,high_value,80,613200.0
+Abu Dhabi Airport,Beijing Airport,6497,air,LD7 Pallet,5217.97,0.0021079159999999996,fragile,80,1766371.88
+Abu Dhabi Airport,Shanghai Airport,1931,air,LD3 Container,1138.49,0.0006484139999999999,hazardous,80,597403.12
+Jebel Ali Port,Mumbai Port,3699,sea,20ft TEU,17856.93,38.296775999999994,fragile,80,187261.88
+Jebel Ali Port,Chennai Port,2082,sea,40ft FEU,663.85,77.035924,fragile,80,105401.25
+Jebel Ali Port,Port of LA,7311,sea,40ft FEU,11503.59,77.035924,perishable,80,397535.62
+Jebel Ali Port,Port of NY/NJ,1381,sea,20ft TEU,26363.85,38.296775999999994,high_value,80,67323.75
+Jebel Ali Port,Port of Felixstowe,4568,sea,20ft TEU,7384.8,38.296775999999994,standard,80,196995.0
+Jebel Ali Port,Port of Southampton,1656,sea,20ft TEU,2662.64,38.296775999999994,standard,80,71415.0
+Jebel Ali Port,Port Rashid,7271,sea,40ft FEU,10642.19,77.035924,fragile,80,368094.37
+Jebel Ali Port,Port of Rotterdam,964,sea,20ft TEU,20525.94,38.296775999999994,perishable,80,52417.5
+Jebel Ali Port,Port of Shanghai,1402,sea,20ft TEU,15926.44,38.296775999999994,hazardous,80,81491.25
+Jebel Ali Port,Port of Shenzhen,5910,sea,20ft TEU,30158.68,38.296775999999994,high_value,80,288112.5
+Port Rashid,Mumbai Port,5289,sea,20ft TEU,26272.99,38.296775999999994,high_value,80,257838.75
+Port Rashid,Chennai Port,6539,sea,40ft FEU,16364.65,77.035924,perishable,80,355558.13
+Port Rashid,Port of LA,3346,sea,40ft FEU,13496.31,77.035924,standard,80,144296.25
+Port Rashid,Port of NY/NJ,3455,sea,20ft TEU,14326.16,38.296775999999994,fragile,80,174909.38
+Port Rashid,Port of Felixstowe,2361,sea,20ft TEU,22994.66,38.296775999999994,standard,80,101818.12
+Port Rashid,Port of Southampton,3751,sea,20ft TEU,1171.74,38.296775999999994,standard,80,161761.88
+Port Rashid,Jebel Ali Port,4228,sea,40ft FEU,4587.26,77.035924,oversized,80,293317.5
+Port Rashid,Port of Rotterdam,2063,sea,20ft TEU,4148.32,38.296775999999994,standard,80,88966.88
+Port Rashid,Port of Shanghai,5822,sea,20ft TEU,28527.32,38.296775999999994,oversized,80,403901.25
+Port Rashid,Port of Shenzhen,6220,sea,40ft FEU,22147.1,77.035924,oversized,80,431512.5
+Dubai,Abu Dhabi,4566,road,40ft Container,25715.51,77.035924,fragile,80,462307.5
+Abu Dhabi,Dubai,7471,road,20ft Container,17364.73,38.296775999999994,oversized,80,1036601.25
+Schiphol Airport,Delhi Airport,240,air,LD3 Container,783.55,0.0006484139999999999,high_value,110,63000.0
+Schiphol Airport,Mumbai Airport,406,air,LD3 Container,1052.2,0.0006484139999999999,hazardous,110,125606.25
+Schiphol Airport,Bangalore Airport,1774,air,LD3 Container,1558.13,0.0006484139999999999,high_value,110,465675.0
+Schiphol Airport,JFK Airport,7965,air,LD3 Container,1021.18,0.0006484139999999999,oversized,110,2912203.12
+Schiphol Airport,LAX Airport,7507,air,LD3 Container,1175.59,0.0006484139999999999,fragile,110,2040965.62
+Schiphol Airport,ORD Airport,1982,air,LD7 Pallet,1504.96,0.0021079159999999996,high_value,110,520275.0
+Schiphol Airport,Heathrow Airport,221,air,LD3 Container,626.42,0.0006484139999999999,oversized,110,80803.12
+Schiphol Airport,Manchester Airport,4064,air,LD3 Container,878.69,0.0006484139999999999,fragile,110,1104900.0
+Schiphol Airport,Dubai Airport,5122,air,LD7 Pallet,1842.67,0.0021079159999999996,standard,110,1200468.75
+Schiphol Airport,Abu Dhabi Airport,5674,air,LD3 Container,653.83,0.0006484139999999999,hazardous,110,1755393.75
+Schiphol Airport,Beijing Airport,3438,air,LD7 Pallet,3622.23,0.0021079159999999996,perishable,110,999168.75
+Schiphol Airport,Shanghai Airport,2528,air,LD7 Pallet,1072.26,0.0021079159999999996,hazardous,110,782100.0
+Port of Rotterdam,Mumbai Port,1356,sea,40ft FEU,30262.7,77.035924,fragile,110,68647.5
+Port of Rotterdam,Chennai Port,779,sea,40ft FEU,1857.08,77.035924,standard,110,33594.38
+Port of Rotterdam,Port of LA,6669,sea,20ft TEU,22482.19,38.296775999999994,standard,110,287600.62
+Port of Rotterdam,Port of NY/NJ,4776,sea,20ft TEU,8776.41,38.296775999999994,standard,110,205965.0
+Port of Rotterdam,Port of Felixstowe,2326,sea,40ft FEU,30234.57,77.035924,standard,110,100308.75
+Port of Rotterdam,Port of Southampton,3607,sea,40ft FEU,12478.97,77.035924,hazardous,110,209656.88
+Port of Rotterdam,Jebel Ali Port,1347,sea,40ft FEU,19917.79,77.035924,high_value,110,65666.25
+Port of Rotterdam,Port Rashid,403,sea,20ft TEU,9508.57,38.296775999999994,perishable,110,21913.12
+Port of Rotterdam,Port of Shanghai,1011,sea,20ft TEU,15781.66,38.296775999999994,standard,110,43599.38
+Port of Rotterdam,Port of Shenzhen,6717,sea,20ft TEU,795.01,38.296775999999994,standard,110,289670.62
+Amsterdam,Rotterdam,3144,road,40ft Container,27964.7,77.035924,perishable,110,341910.0
+Rotterdam,Amsterdam,4202,road,20ft Container,6897.49,38.296775999999994,high_value,110,409695.0
+Beijing Airport,Delhi Airport,1293,air,LD3 Container,722.42,0.0006484139999999999,standard,95,303046.88
+Beijing Airport,Mumbai Airport,2332,air,LD7 Pallet,5816.46,0.0021079159999999996,standard,95,546562.5
+Beijing Airport,Bangalore Airport,5393,air,LD7 Pallet,516.86,0.0021079159999999996,oversized,95,1971815.62
+Beijing Airport,JFK Airport,6737,air,LD3 Container,1352.13,0.0006484139999999999,perishable,95,1957940.62
+Beijing Airport,LAX Airport,5506,air,LD7 Pallet,4603.2,0.0021079159999999996,standard,95,1290468.75
+Beijing Airport,ORD Airport,219,air,LD7 Pallet,5600.61,0.0021079159999999996,high_value,95,57487.5
+Beijing Airport,Heathrow Airport,7129,air,LD7 Pallet,2185.97,0.0021079159999999996,oversized,95,2606540.62
+Beijing Airport,Manchester Airport,7576,air,LD7 Pallet,1822.78,0.0021079159999999996,oversized,95,2769975.0
+Beijing Airport,Dubai Airport,6221,air,LD3 Container,1509.75,0.0006484139999999999,oversized,95,2274553.12
+Beijing Airport,Abu Dhabi Airport,7256,air,LD3 Container,1440.84,0.0006484139999999999,oversized,95,2652975.0
+Beijing Airport,Schiphol Airport,871,air,LD7 Pallet,5782.52,0.0021079159999999996,standard,95,204140.62
+Beijing Airport,Shanghai Airport,1770,air,LD3 Container,1087.82,0.0006484139999999999,hazardous,95,547593.75
+Shanghai Airport,Delhi Airport,418,air,LD3 Container,1118.36,0.0006484139999999999,standard,95,97968.75
+Shanghai Airport,Mumbai Airport,6659,air,LD3 Container,1034.92,0.0006484139999999999,standard,95,1560703.12
+Shanghai Airport,Bangalore Airport,5070,air,LD7 Pallet,6209.23,0.0021079159999999996,standard,95,1188281.25
+Shanghai Airport,JFK Airport,313,air,LD7 Pallet,4438.0,0.0021079159999999996,high_value,95,82162.5
+Shanghai Airport,LAX Airport,3401,air,LD3 Container,590.55,0.0006484139999999999,fragile,95,924646.88
+Shanghai Airport,ORD Airport,4687,air,LD7 Pallet,3758.19,0.0021079159999999996,standard,95,1098515.62
+Shanghai Airport,Heathrow Airport,2056,air,LD7 Pallet,6337.12,0.0021079159999999996,fragile,95,558975.0
+Shanghai Airport,Manchester Airport,3707,air,LD7 Pallet,4025.08,0.0021079159999999996,fragile,95,1007840.62
+Shanghai Airport,Dubai Airport,2398,air,LD3 Container,1562.65,0.0006484139999999999,oversized,95,876768.75
+Shanghai Airport,Abu Dhabi Airport,3839,air,LD7 Pallet,5732.09,0.0021079159999999996,oversized,95,1403634.38
+Shanghai Airport,Schiphol Airport,3973,air,LD7 Pallet,3424.97,0.0021079159999999996,high_value,95,1042912.5
+Shanghai Airport,Beijing Airport,5155,air,LD7 Pallet,5347.94,0.0021079159999999996,perishable,95,1498171.88
+Port of Shanghai,Mumbai Port,5943,sea,40ft FEU,6213.88,77.035924,perishable,95,323150.62
+Port of Shanghai,Chennai Port,5625,sea,40ft FEU,19572.27,77.035924,high_value,95,274218.75
+Port of Shanghai,Port of LA,6546,sea,20ft TEU,11893.66,38.296775999999994,hazardous,95,380486.25
+Port of Shanghai,Port of NY/NJ,5494,sea,40ft FEU,8706.17,77.035924,perishable,95,298736.25
+Port of Shanghai,Port of Felixstowe,2153,sea,20ft TEU,10204.98,38.296775999999994,standard,95,92848.12
+Port of Shanghai,Port of Southampton,4443,sea,40ft FEU,3303.92,77.035924,hazardous,95,258249.38
+Port of Shanghai,Jebel Ali Port,6279,sea,40ft FEU,16535.32,77.035924,hazardous,95,364966.88
+Port of Shanghai,Port Rashid,7297,sea,20ft TEU,3642.25,38.296775999999994,oversized,95,506229.37
+Port of Shanghai,Port of Rotterdam,4715,sea,20ft TEU,20173.71,38.296775999999994,perishable,95,256378.12
+Port of Shanghai,Port of Shenzhen,2586,sea,20ft TEU,29449.38,38.296775999999994,fragile,95,130916.25
+Port of Shenzhen,Mumbai Port,7673,sea,20ft TEU,14635.5,38.296775999999994,hazardous,95,445993.12
+Port of Shenzhen,Chennai Port,3076,sea,40ft FEU,28090.65,77.035924,fragile,95,155722.5
+Port of Shenzhen,Port of LA,4602,sea,20ft TEU,30122.43,38.296775999999994,standard,95,198461.25
+Port of Shenzhen,Port of NY/NJ,6504,sea,20ft TEU,6487.97,38.296775999999994,oversized,95,451215.0
+Port of Shenzhen,Port of Felixstowe,1020,sea,20ft TEU,13622.59,38.296775999999994,hazardous,95,59287.5
+Port of Shenzhen,Port of Southampton,1658,sea,20ft TEU,29010.52,38.296775999999994,high_value,95,80827.5
+Port of Shenzhen,Jebel Ali Port,735,sea,40ft FEU,18198.81,77.035924,perishable,95,39965.62
+Port of Shenzhen,Port Rashid,6232,sea,20ft TEU,23405.71,38.296775999999994,fragile,95,315495.0
+Port of Shenzhen,Port of Rotterdam,7724,sea,40ft FEU,21850.92,77.035924,standard,95,333097.5
+Port of Shenzhen,Port of Shanghai,3675,sea,40ft FEU,4690.46,77.035924,perishable,95,199828.12
+Beijing,Shanghai,7629,road,40ft Container,24965.18,77.035924,hazardous,95,886871.25
+Beijing,Shenzhen,4532,road,40ft Container,20723.93,77.035924,high_value,95,441870.0
+Shanghai,Beijing,5962,road,40ft Container,27679.93,77.035924,oversized,95,827227.5
+Shanghai,Shenzhen,1917,road,40ft Container,21786.41,77.035924,fragile,95,194096.25
+Shenzhen,Beijing,5864,road,40ft Container,19435.45,77.035924,hazardous,95,681690.0
+Shenzhen,Shanghai,3735,road,20ft Container,18975.52,38.296775999999994,oversized,95,518231.25
