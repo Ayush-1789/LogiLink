@@ -2,16 +2,12 @@ import requests
 import pandas as pd
 import networkx as nx
 from typing import Dict, List, Tuple, Any
-import webbrowser
 import numpy as np
 import math
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from pymoo.core.population import Population
-from pymoo.core.individual import Individual
-import os
 import time
 from functools import lru_cache
 
