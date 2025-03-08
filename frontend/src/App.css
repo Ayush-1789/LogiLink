@@ -279,7 +279,7 @@ header p {
     justify-content: center;
     gap: 1rem;
     margin-top: 2rem;
-    padding-bottom: 1rem;
+    padding: 0 1rem;
 }
 
 button {
