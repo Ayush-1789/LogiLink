@@ -762,33 +762,43 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, go
 # ROUTE RANKING AND VISUALIZATION
 # -------------------------------------------------------------------------
 def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priority: int) -> List[Tuple[List[str], Dict[str, Any]]]:
+    """
+    Rank routes based on priority. Returns top 3 routes.
+    """
     if not optimized_routes:
         return []
 
-    if priority == 1:  # Minimize cost
-        print("Ranking strictly by total cost, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_cost'])
-        return sorted_routes[:3]
-
+    # Create a copy to avoid modifying original
+    routes_to_rank = optimized_routes.copy()
+    
+    if priority == 4:  # Minimize emissions
+        print("Ranking strictly by CO2 emissions, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_emissions'])
     elif priority == 2:  # Minimize time
         print("Ranking strictly by total time, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_time'])
-        return sorted_routes[:3]
-
-    else:  # Balanced ranking
-        print("Ranking by simple normalized sum of cost & time.")
-        min_cost = min(r[1]['total_cost'] for r in optimized_routes)
-        max_cost = max(r[1]['total_cost'] for r in optimized_routes)
-        min_time = min(r[1]['total_time'] for r in optimized_routes)
-        max_time = max(r[1]['total_time'] for r in optimized_routes)
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_time'])
+    elif priority == 1:  # Minimize cost
+        print("Ranking strictly by total cost, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_cost'])
+    else:  # Balanced
+        print("Ranking by normalized combination of cost, time, and emissions.")
+        min_cost = min(r[1]['total_cost'] for r in routes_to_rank)
+        max_cost = max(r[1]['total_cost'] for r in routes_to_rank)
+        min_time = min(r[1]['total_time'] for r in routes_to_rank)
+        max_time = max(r[1]['total_time'] for r in routes_to_rank)
+        min_emissions = min(r[1]['total_emissions'] for r in routes_to_rank)
+        max_emissions = max(r[1]['total_emissions'] for r in routes_to_rank)
 
         def balanced_score(eval_data):
             norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
-            return 0.5 * norm_cost + 0.5 * norm_time
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
 
-        sorted_routes = sorted(optimized_routes, key=lambda x: balanced_score(x[1]))
-        return sorted_routes[:3]
+        sorted_routes = sorted(routes_to_rank, key=lambda x: balanced_score(x[1]))
+
+    # Always return exactly 3 routes if available
+    return sorted_routes[:3]
 
 def visualize_route(G: nx.DiGraph, route: List[str], evaluation: Dict[str, Any]) -> None:
     """
@@ -1238,18 +1248,22 @@ def main():
     
     # Priority selection
     print("\nOptimization priority:")
-    print("1. Minimize Cost")
-    print("2. Minimize Time")
-    print("3. Balanced (weighted combination)")
-    priority_choice = input("Enter your choice (1-3): ")
+    print("[cost] Minimize Cost")
+    print("[time] Minimize Time")
+    print("[eco] Minimize CO2 Emissions")
+    print("[balanced] Balanced Optimization")
+    priority_choice = input("Enter your choice [cost/time/eco/balanced]: ").lower().strip()
     
-    priority_int = 3  # Default to balanced
-    if priority_choice == "1":
+    # Set priority based on text input
+    if priority_choice == "cost":
         priority = "minimize_cost"
         priority_int = 1
-    elif priority_choice == "2":
+    elif priority_choice == "time":
         priority = "minimize_time"
         priority_int = 2
+    elif priority_choice == "eco":
+        priority = "minimize_emissions"
+        priority_int = 4  # New priority number for emissions
     else:
         priority = "weighted"
         priority_int = 3
@@ -1326,25 +1340,47 @@ def main():
     if route_evaluations:
         min_cost = min(route_evaluations, key=lambda x: x[1]['total_cost'])[1]['total_cost']
         min_time = min(route_evaluations, key=lambda x: x[1]['total_time'])[1]['total_time']
-    
+        min_emissions = min(route_evaluations, key=lambda x: x[1]['total_emissions'])[1]['total_emissions']
+
         filtered_routes = []
-    
-        if priority == "minimize_cost":
+        
+        if priority == "minimize_emissions":
+            # Include routes with emissions up to 8x the minimum
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 2:
+                if eval['total_emissions'] <= min_emissions * 8:
                     filtered_routes.append(route)
         elif priority == "minimize_time":
             for route, eval in route_evaluations:
-                if eval['total_time'] <= min_time * 3:
+                if eval['total_time'] <= min_time * 2:
+                    filtered_routes.append(route)
+        elif priority == "minimize_cost":
+            for route, eval in route_evaluations:
+                if eval['total_cost'] <= min_cost * 3:
                     filtered_routes.append(route)
         else:  # Balanced
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 5 and eval['total_time'] <= min_time * 10:
+                if (eval['total_cost'] <= min_cost * 5 or 
+                    eval['total_time'] <= min_time * 3 or 
+                    eval['total_emissions'] <= min_emissions * 5):
                     filtered_routes.append(route)
-    
+
+        # Always ensure we have at least 3 routes
+        if len(filtered_routes) < 3 and route_evaluations:
+            print("Warning: Too few routes after filtering. Adding back some routes...")
+            if priority == "minimize_emissions":
+                # Sort remaining routes by emissions for eco-priority
+                remaining_routes = sorted(
+                    [(r[0], r[1]['total_emissions']) for r in route_evaluations if r[0] not in filtered_routes],
+                    key=lambda x: x[1]
+                )
+                filtered_routes.extend([r[0] for r in remaining_routes[:3 - len(filtered_routes)]])
+            else:
+                remaining_routes = [r[0] for r in route_evaluations if r[0] not in filtered_routes]
+                filtered_routes.extend(remaining_routes[:3 - len(filtered_routes)])
+
         print(f"Pre-filtered from {len(routes)} to {len(filtered_routes)} routes")
         routes = filtered_routes
-    
+
     # Apply NSGA-III optimization
     print("\nApplying multi-objective optimization (NSGA-III)...")
     optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, goods_type)
@@ -1392,6 +1428,13 @@ def main():
             if route_str not in seen_routes and len(unique_ranked_routes) < 3:
                 unique_ranked_routes.append((route, evaluation))
                 seen_routes.add(route_str)
+    elif priority_int == 4 and len(unique_ranked_routes) < 3:  # For emissions priority
+        sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_emissions'])
+        for route, evaluation in sorted_candidates:
+            route_str = "→".join(route)
+            if route_str not in seen_routes and len(unique_ranked_routes) < 3:
+                unique_ranked_routes.append((route, evaluation))
+                seen_routes.add(route_str)
 
     # After duplicate removal:
     # 'unique_ranked_routes' now holds the routes in the order produced by rank_routes.
@@ -1400,16 +1443,23 @@ def main():
         unique_ranked_routes.sort(key=lambda x: x[1]['total_cost'])
     elif priority_int == 2:
         unique_ranked_routes.sort(key=lambda x: x[1]['total_time'])
+    elif priority_int == 4:
+        unique_ranked_routes.sort(key=lambda x: x[1]['total_emissions'])
     else:
         # For balanced, recompute balanced score over the unique set
         min_cost = min(r[1]['total_cost'] for r in unique_ranked_routes)
         max_cost = max(r[1]['total_cost'] for r in unique_ranked_routes)
         min_time = min(r[1]['total_time'] for r in unique_ranked_routes)
         max_time = max(r[1]['total_time'] for r in unique_ranked_routes)
+        min_emissions = min(r[1]['total_emissions'] for r in unique_ranked_routes)
+        max_emissions = max(r[1]['total_emissions'] for r in unique_ranked_routes)
+        
         def balanced_score(eval_data):
             norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
-            return 0.5 * norm_cost + 0.5 * norm_time
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
+        
         unique_ranked_routes.sort(key=lambda x: balanced_score(x[1]))
     
     # Finally, limit to top 3 (if there are more than 3)
