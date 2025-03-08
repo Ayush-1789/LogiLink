@@ -1,365 +1,305 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Route } from "./Route";
-import getMockRoutes from "./mockRoutes";
-
-type Filter = "all" | "land" | "sea" | "air";
+import mockRoutes from "./mockRoutes";
 
 export default function Results() {
-  const shipmentDetails = useLocation().state;
-
-  const [activeFilter, setActiveFilter] = useState<Filter>("all");
-
-  const routeOptions = getMockRoutes(shipmentDetails);
-
+  const location = useLocation();
+  const shipmentDetails = location.state;
   const navigate = useNavigate();
-
+  
+  // Use mockRoutes directly
+  const allRouteOptions = React.useMemo(() => {
+    return typeof mockRoutes === 'function' ? mockRoutes(shipmentDetails) : mockRoutes;
+  }, [shipmentDetails]);
+  
+  // Filter routes based on priority selected in the Home page
+  const priorityFilteredRoutes = React.useMemo(() => {
+    const priority = shipmentDetails?.priority || "balanced";
+    
+    // Apply the priority filter
+    if (priority === "cost") {
+      // Sort by cost (lowest first)
+      return [...allRouteOptions].sort((a, b) => a.cost - b.cost);
+    } else if (priority === "speed") {
+      // Sort by transit time (fastest first)
+      return [...allRouteOptions].sort((a, b) => a.transitTime - b.transitTime);
+    } else if (priority === "eco") {
+      // Sort by emissions (lowest first)
+      return [...allRouteOptions].sort((a, b) => Number(a.co2Emissions) - Number(b.co2Emissions));
+    } else {
+      // For "balanced" - use a combined score
+      return [...allRouteOptions].sort((a, b) => {
+        // Normalize values between 0-1
+        const maxCost = Math.max(...allRouteOptions.map(r => r.cost));
+        const maxTime = Math.max(...allRouteOptions.map(r => r.transitTime));
+        
+        // Calculate balanced score (lower is better)
+        const scoreA = (a.cost / maxCost) * 0.5 + (a.transitTime / maxTime) * 0.5;
+        const scoreB = (b.cost / maxCost) * 0.5 + (b.transitTime / maxTime) * 0.5;
+        
+        return scoreA - scoreB;
+      });
+    }
+  }, [shipmentDetails?.priority, allRouteOptions]);
+  
+  // Get recommended routes (top 3)
+  const getRecommendedRoutes = () => {
+    return priorityFilteredRoutes.slice(0, 3);
+  };
+  
+  // Get additional routes (everything after top 3)
+  const getAdditionalRoutes = () => {
+    return priorityFilteredRoutes.slice(3);
+  };
+  
+  // Navigate to detailed route view
   const showRouteDetails = (route: Route) => {
     navigate("/details", { state: { shipmentDetails, selectedRoute: route } });
   };
-
-  // Get filtered and organized routes
-  const getFilteredRoutes = () => {
-    if (activeFilter === "all") {
-      return routeOptions;
-    } else if (activeFilter === "air") {
-      return routeOptions.filter(
-        (route) => route.modes.length === 1 && route.modes.includes("Air"),
-      );
-    } else if (activeFilter === "sea") {
-      return routeOptions.filter(
-        (route) => route.modes.length === 1 && route.modes.includes("Sea"),
-      );
-    } else if (activeFilter === "land") {
-      return routeOptions.filter(
-        (route) => route.modes.length === 1 && route.modes.includes("Land"),
-      );
-    } else {
-      return routeOptions;
+  
+  // Get the priority label for UI display
+  const getPriorityLabel = () => {
+    switch(shipmentDetails?.priority) {
+      case "cost": return "Cost-Effective";
+      case "speed": return "Fastest";
+      case "eco": return "Eco-Friendly";
+      default: return "Balanced";
     }
   };
 
-  // Get featured routes (fastest and most cost-effective) based on current filter
-  const getFeaturedRoutes = () => {
-    // First, get the filtered routes based on the active filter
-    const filteredRoutes = getFilteredRoutes();
-
-    // From the filtered routes, find the fastest option
-    const fastest = filteredRoutes.reduce<Route | null>(
-      (fastestRoute, currentRoute) => {
-        if (
-          !fastestRoute ||
-          currentRoute.transitTime < fastestRoute.transitTime
-        ) {
-          return currentRoute;
-        }
-        return fastestRoute;
-      },
-      null,
-    );
-
-    // From the filtered routes, find the most cost-effective option
-    const costEffective = filteredRoutes.reduce<Route | null>(
-      (cheapestRoute, currentRoute) => {
-        if (!cheapestRoute || currentRoute.cost < cheapestRoute.cost) {
-          return currentRoute;
-        }
-        return cheapestRoute;
-      },
-      null,
-    );
-
-    // If the fastest and most cost-effective are the same, just return one
-    if (fastest && costEffective && fastest.id === costEffective.id) {
-      return [{ ...fastest, category: "speed" }]; // Use one with speed category
+  // Get the priority emoji/icon
+  const getPriorityIcon = () => {
+    switch(shipmentDetails?.priority) {
+      case "cost": return "💰"; // Money bag for cost-effective
+      case "speed": return "⚡"; // Lightning for speed
+      case "eco": return "🌿"; // Leaf for eco-friendly
+      default: return "⚖️"; // Balance scale for balanced
     }
-
-    // Modify the categories to ensure proper display
-    const result: Route[] = [];
-
-    if (fastest) {
-      result.push({ ...fastest, category: "speed" });
-    }
-
-    if (costEffective) {
-      result.push({ ...costEffective, category: "cost" });
-    }
-
-    return result;
   };
-
-  // Get regular routes (exclude featured ones) based on current filter
-  const getRegularRoutes = () => {
-    // First, get all routes that match the current filter
-    const filteredRoutes = getFilteredRoutes();
-
-    // Get the IDs of the featured routes
-    const featuredRoutes = getFeaturedRoutes();
-    const featuredIds = featuredRoutes.map((r) => r.id);
-
-    // Return all filtered routes that aren't featured
-    return filteredRoutes.filter((r) => !featuredIds.includes(r.id));
+  
+  // Format transit time to days and hours
+  const formatTransitTime = (hours: number) => {
+    if (hours < 24) {
+      return `${hours} hours`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return remainingHours > 0 
+      ? `${days} days ${remainingHours} hrs` 
+      : `${days} days`;
   };
 
   return (
     <div className="results-container">
-      <h2>Recommended Route Options</h2>
-      <p className="route-summary">
-        From <strong>{shipmentDetails.origin}</strong> to{" "}
-        <strong>{shipmentDetails.destination}</strong>
-      </p>
-
-      <div className="route-filters">
-        <button
-          className={`filter-button ${activeFilter === "all" ? "active" : ""}`}
-          onClick={() => setActiveFilter("all")}
-        >
-          <span className="filter-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-              <line x1="9" y1="3" x2="9" y2="21"></line>
-              <line x1="15" y1="3" x2="15" y2="21"></line>
-              <line x1="3" y1="9" x2="21" y2="9"></line>
-              <line x1="3" y1="15" x2="21" y2="15"></line>
-            </svg>
-          </span>
-          All Routes
-        </button>
-        <button
-          className={`filter-button ${activeFilter === "air" ? "active" : ""}`}
-          onClick={() => setActiveFilter("air")}
-        >
-          <span className="filter-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path>
-            </svg>
-          </span>
-          Air Only
-        </button>
-        <button
-          className={`filter-button ${activeFilter === "sea" ? "active" : ""}`}
-          onClick={() => setActiveFilter("sea")}
-        >
-          <span className="filter-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M18 17H6a3 3 0 0 1-3-3V4"></path>
-              <path d="M18 17v.01"></path>
-              <path d="M18 13v.01"></path>
-              <path d="M14 13v.01"></path>
-              <path d="M10 13v.01"></path>
-              <path d="M6 13v.01"></path>
-              <path d="M3 7v.01"></path>
-              <path d="M15 7h4.5L21 9h-4.5"></path>
-            </svg>
-          </span>
-          Sea Only
-        </button>
-        <button
-          className={`filter-button ${activeFilter === "land" ? "active" : ""}`}
-          onClick={() => setActiveFilter("land")}
-        >
-          <span className="filter-icon">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="1" y="3" width="15" height="13"></rect>
-              <polyline points="16 8 20 8 23 11 23 16 16 16 16 8"></polyline>
-              <circle cx="5.5" cy="18.5" r="2.5"></circle>
-              <circle cx="18.5" cy="18.5" r="2.5"></circle>
-            </svg>
-          </span>
-          Land Only
-        </button>
+      {/* Header section with journey details */}
+      <div className="results-header">
+        <div className="header-content">
+          <div className="header-top">
+            <h1 className="results-title">Route Options</h1>
+            <div className="priority-badge">
+              <span className="priority-icon">{getPriorityIcon()}</span>
+              <span className="priority-text">{getPriorityLabel()} Priority</span>
+            </div>
+          </div>
+          
+          <div className="journey-details">
+            <div className="journey-path">
+              <div className="journey-location origin">{shipmentDetails?.origin}</div>
+              <div className="journey-connector">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M5 12h14M12 5l7 7-7 7"/>
+                </svg>
+              </div>
+              <div className="journey-location destination">{shipmentDetails?.destination}</div>
+            </div>
+            <div className="shipment-details">
+              <span className="shipment-weight">{shipmentDetails?.weight} kg</span>
+              {shipmentDetails?.goodsType && (
+                <span className="goods-type">{shipmentDetails.goodsType}</span>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Featured routes section (fastest and most cost-effective) */}
-      {getFeaturedRoutes().length > 0 && (
-        <div className="route-result-section">
-          <h3 className="route-section-title">Recommended Options</h3>
-          <div className="route-options">
-            {getFeaturedRoutes().map((route) => (
-              <div
-                key={route.id}
-                className={`route-card featured featured-${route.category}`}
-              >
-                <div className="route-header">
-                  <h3>
-                    {route.category === "speed"
-                      ? "Fastest Option"
-                      : route.category === "cost"
-                        ? "Most Cost-Effective"
-                        : `Option ${route.id}`}
-                  </h3>
-                  <div className="route-modes">
-                    {route.modes.map((mode, index) => (
-                      <span
-                        key={index}
-                        className={`mode-tag mode-${mode.toLowerCase()}`}
-                      >
-                        {mode}
-                        {index < route.modes.length - 1 && (
-                          <span className="mode-arrow">→</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="route-details">
-                  <div className="detail-item">
-                    <span className="detail-label">Estimated Cost:</span>
-                    <span className="detail-value">
-                      ${route.cost.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Transit Time:</span>
-                    <span className="detail-value">
-                      {route.transitTime} days
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Border Crossings:</span>
-                    <span className="detail-value">
-                      {route.borderCrossings}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">CO2 Emissions:</span>
-                    <span className="detail-value">{route.co2Emissions}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Reliability:</span>
-                    <span className="detail-value">{route.reliability}</span>
-                  </div>
-                </div>
-
-                <button
-                  className="select-route-button"
+      {priorityFilteredRoutes.length > 0 ? (
+        <div className="routes-content">
+          {/* Top Recommended Routes Section */}
+          <section className="route-section recommended-section">
+            <div className="section-header">
+              <h2 className="section-title">
+                <span className="section-icon">✨</span>
+                Recommended Routes
+              </h2>
+              <p className="section-description">
+                Best options based on your {getPriorityLabel().toLowerCase()} priority
+              </p>
+            </div>
+            
+            <div className="recommended-routes-grid">
+              {getRecommendedRoutes().map((route, index) => (
+                <div
+                  key={route.id}
+                  className="route-card recommended"
                   onClick={() => showRouteDetails(route)}
                 >
-                  View Detailed Route
-                </button>
+                  <div className="route-card-inner">
+                    <div className="card-header">
+                      <div className="route-rank">#{index + 1}</div>
+                      <h3 className="route-name">{route.name}</h3>
+                      <div className="route-modes">
+                        {route.modes.map((mode, idx) => (
+                          <span key={idx} className={`mode-tag mode-${mode.toLowerCase()}`}>
+                            {mode}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="route-visualization">
+                      <div className="route-endpoints">
+                        <div className="endpoint origin">{shipmentDetails?.origin}</div>
+                        <div className="endpoint destination">{shipmentDetails?.destination}</div>
+                      </div>
+                      <div className="route-path">
+                        {route.modes.map((mode, idx) => (
+                          <span key={idx} className={`path-segment mode-${mode.toLowerCase()}`}>
+                            {mode === 'Air' ? '✈️' : mode === 'Sea' ? '🚢' : '🚚'}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div className="route-metrics">
+                      <div className="metric">
+                        <span className="metric-icon">💰</span>
+                        <span className="metric-value">₹{route.cost?.toLocaleString() || 'N/A'}</span>
+                        <span className="metric-label">Cost</span>
+                      </div>
+                      <div className="metric">
+                        <span className="metric-icon">⏱️</span>
+                        <span className="metric-value">{formatTransitTime(route.transitTime)}</span>
+                        <span className="metric-label">Time</span>
+                      </div>
+                      <div className="metric">
+                        <span className="metric-icon">🌿</span>
+                        <span className="metric-value">{route.co2Emissions ? `${route.co2Emissions} kg` : 'N/A'}</span>
+                        <span className="metric-label">CO₂</span>
+                      </div>
+                    </div>
+                    
+                    <div className="card-footer">
+                      <div className="carrier">
+                        <div className="carrier-avatar">{route.carrier?.charAt(0) || '?'}</div>
+                        <span className="carrier-name">{route.carrier || 'Unknown carrier'}</span>
+                      </div>
+                      <button className="details-button">View Details</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Additional Routes Section */}
+          {getAdditionalRoutes().length > 0 && (
+            <section className="route-section additional-section">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <span className="section-icon">🔍</span>
+                  Alternative Options
+                </h2>
+                <p className="section-description">Additional routes that match your criteria</p>
               </div>
-            ))}
+              
+              <div className="additional-routes-list">
+                {getAdditionalRoutes().map((route) => (
+                  <div
+                    key={route.id}
+                    className="route-card alternative"
+                    onClick={() => showRouteDetails(route)}
+                  >
+                    <div className="alt-route-content">
+                      <div className="alt-route-main">
+                        <div className="alt-route-header">
+                          <h3 className="alt-route-name">{route.name}</h3>
+                          <div className="alt-route-modes">
+                            {route.modes.map((mode, index) => (
+                              <span key={index} className={`mode-tag mode-${mode.toLowerCase()}`}>
+                                {mode}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                        
+                        <div className="alt-route-metrics">
+                          <div className="alt-metric-item">
+                            <span className="alt-metric-icon">💰</span>
+                            <div className="alt-metric-detail">
+                              <span className="alt-metric-value">₹{route.cost?.toLocaleString() || 'N/A'}</span>
+                              <span className="alt-metric-label">Cost</span>
+                            </div>
+                          </div>
+                          <div className="alt-metric-item">
+                            <span className="alt-metric-icon">⏱️</span>
+                            <div className="alt-metric-detail">
+                              <span className="alt-metric-value">{formatTransitTime(route.transitTime)}</span>
+                              <span className="alt-metric-label">Transit Time</span>
+                            </div>
+                          </div>
+                          <div className="alt-metric-item">
+                            <span className="alt-metric-icon">🌿</span>
+                            <div className="alt-metric-detail">
+                              <span className="alt-metric-value">{route.co2Emissions ? `${route.co2Emissions} kg` : 'N/A'}</span>
+                              <span className="alt-metric-label">CO₂ Emissions</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="alt-route-visual">
+                        <div className="alt-route-path">
+                          <div className="alt-route-origin">{shipmentDetails?.origin}</div>
+                          <div className="alt-route-line">
+                            {route.modes.map((mode, idx) => (
+                              <span key={idx} className={`alt-route-icon mode-${mode.toLowerCase()}`}>
+                                {mode === 'Air' ? '✈️' : mode === 'Sea' ? '🚢' : '🚚'}
+                              </span>
+                            ))}
+                          </div>
+                          <div className="alt-route-destination">{shipmentDetails?.destination}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="alt-route-action">
+                        <div className="alt-carrier">
+                          <div className="alt-carrier-logo">{route.carrier?.charAt(0) || '?'}</div>
+                          <span className="alt-carrier-name">{route.carrier || 'Unknown'}</span>
+                        </div>
+                        <button className="alt-details-button">View Details</button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </div>
+      ) : (
+        <div className="no-routes-container">
+          <div className="no-routes-content">
+            <div className="no-routes-icon">🔍</div>
+            <h3 className="no-routes-title">No Routes Found</h3>
+            <p className="no-routes-message">
+              No routes are available for your shipment details. Please try different parameters.
+            </p>
+            <button className="back-button" onClick={() => navigate(-1)}>
+              Go Back
+            </button>
           </div>
         </div>
       )}
-
-      {/* Other routes section */}
-      {getRegularRoutes().length > 0 && (
-        <div className="route-result-section">
-          <h3 className="route-section-title">Alternative Options</h3>
-          <div className="route-options">
-            {getRegularRoutes().map((route) => (
-              <div key={route.id} className="route-card">
-                <div className="route-header">
-                  <h3>Option {route.id}</h3>
-                  <div className="route-modes">
-                    {route.modes.map((mode, index) => (
-                      <span
-                        key={index}
-                        className={`mode-tag mode-${mode.toLowerCase()}`}
-                      >
-                        {mode}
-                        {index < route.modes.length - 1 && (
-                          <span className="mode-arrow">→</span>
-                        )}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="route-details">
-                  <div className="detail-item">
-                    <span className="detail-label">Estimated Cost:</span>
-                    <span className="detail-value">
-                      ${route.cost.toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Transit Time:</span>
-                    <span className="detail-value">
-                      {route.transitTime} days
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Border Crossings:</span>
-                    <span className="detail-value">
-                      {route.borderCrossings}
-                    </span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">CO2 Emissions:</span>
-                    <span className="detail-value">{route.co2Emissions}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Reliability:</span>
-                    <span className="detail-value">{route.reliability}</span>
-                  </div>
-                </div>
-
-                <button
-                  className="select-route-button"
-                  onClick={() => showRouteDetails(route)}
-                >
-                  View Detailed Route
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {getFilteredRoutes().length === 0 && (
-        <div className="no-results">
-          <p>
-            No routes found for the selected filter. Try a different option.
-          </p>
-        </div>
-      )}
-
-      <button className="back-button" onClick={() => navigate("/")}>
-        Back to Form
-      </button>
     </div>
   );
 }
