@@ -48,10 +48,6 @@ class Route(BaseModel):
     data: Data
 
 
-class Routing(BaseModel):
-    routes: list[Route]
-
-
 class Priority(str, Enum):
     COST = "1"
     TIME = "2"
