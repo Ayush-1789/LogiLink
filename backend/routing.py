@@ -1,15 +1,10 @@
 import requests
 import pandas as pd
 import networkx as nx
-import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Any
-import random
-import polyline
 import webbrowser
 import numpy as np
 import math
-import folium
-from folium.plugins import AntPath, TimestampedGeoJson
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.core.problem import Problem
@@ -749,129 +744,7 @@ def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priori
 
         return sorted(optimized_routes, key=lambda x: balanced_score(x[1]))
 
-def visualize_route(G: nx.DiGraph, route: List[str], evaluation: Dict[str, Any]) -> None:
-    """
-    Create an animated visualization of the route using folium
-    """
-    # Get coordinates for first node
-    start_coords_str = G.nodes[route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
     
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Add markers for each node
-    for node in route:
-        coords_str = G.nodes[node]['coords'].split(',')
-        lon, lat = float(coords_str[0]), float(coords_str[1])
-        
-        node_type = G.nodes[node].get('type', 'unknown')
-        
-        if node_type == 'airport':
-            icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-        elif node_type == 'port':
-            icon = folium.Icon(color='green', icon='ship', prefix='fa')
-        elif node_type in ['source', 'city']:
-            icon = folium.Icon(color='red', icon='flag', prefix='fa')
-        elif node_type == 'destination':
-            icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-        else:
-            icon = folium.Icon(color='gray')
-        
-        folium.Marker([lat, lon], tooltip=node, icon=icon).add_to(m)
-    
-    # Add animated paths for each segment
-    for i in range(len(route) - 1):
-        segment = next((s for s in evaluation['segments'] if s['start'] == route[i] and s['end'] == route[i+1]), None)
-        
-        if segment:
-            start_coords_str = G.nodes[route[i]]['coords'].split(',')
-            start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-            
-            end_coords_str = G.nodes[route[i+1]]['coords'].split(',')
-            end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-            
-            mode = segment['mode']
-            
-            # Create different animations based on transport mode
-            if mode == 'road' and 'geometry' in segment:
-                # Use actual road geometry
-                points = polyline.decode(segment['geometry'])
-                
-                # Animate the road path
-                AntPath(
-                    locations=points,
-                    color='blue',
-                    dash_array=[10, 20],
-                    delay=1000,
-                    weight=3,
-                    tooltip=f"Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add vehicle animation using TimestampedGeoJson
-                features = create_vehicle_animation(points, "truck", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",  # One day per frame
-                    duration="P1D",
-                    transition_time=1000,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'air':
-                # Create curved path for flights
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the flight path
-                AntPath(
-                    locations=path_points,
-                    color='red',
-                    weight=3,
-                    dash_array=[2, 10],
-                    delay=200,
-                    tooltip=f"Flight: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add plane animation
-                features = create_vehicle_animation(path_points, "plane", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=800,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'sea':
-                # Create curved path for shipping
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the shipping path
-                AntPath(
-                    locations=path_points,
-                    color='darkgreen',
-                    weight=4,
-                    dash_array=[5, 15],
-                    delay=500,
-                    tooltip=f"Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add ship animation
-                features = create_vehicle_animation(path_points, "ship", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=1500,
-                    auto_play=True
-                ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "route_map.html"
-    m.save(output_file)
-    print(f"\nMap saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
-
 def create_vehicle_animation(points, vehicle_type, segment):
     """Create GeoJSON features for vehicle animation"""
     features = []
@@ -994,153 +867,8 @@ def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, An
     
     print("\n" + "=" * 80)
 
-def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dict[str, Any]]], 
-                         num_routes: int = 3) -> None:
-    """
-    Create a visualization of multiple top routes on a single map
-    """
-    if not ranked_routes:
-        print("No routes to visualize.")
-        return
-        
-    # Get coordinates for first node of the first route
-    first_route = ranked_routes[0][0]
-    start_coords_str = G.nodes[first_route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
     
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Color scheme for different routes
-    route_colors = ['blue', 'green', 'purple', 'orange', 'darkred']
-    
-    # Add top routes to the map
-    for i, (route, evaluation) in enumerate(ranked_routes[:num_routes]):
-        route_color = route_colors[i % len(route_colors)]
-        
-        # Add all nodes as markers
-        for node in route:
-            coords_str = G.nodes[node]['coords'].split(',')
-            lon, lat = float(coords_str[0]), float(coords_str[1])
-            
-            node_type = G.nodes[node].get('type', 'unknown')
-            
-            if node_type == 'airport':
-                icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-            elif node_type == 'port':
-                icon = folium.Icon(color='green', icon='ship', prefix='fa')
-            elif node_type in ['source', 'city']:
-                icon = folium.Icon(color='red', icon='flag', prefix='fa')
-            elif node_type == 'destination':
-                icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-            else:
-                icon = folium.Icon(color='gray')
-            
-            # Add tooltip with node info
-            tooltip = f"{node} (Route {i+1})"
-            folium.Marker([lat, lon], tooltip=tooltip, icon=icon).add_to(m)
-        
-        # Add segments
-        for j in range(len(route) - 1):
-            segment = next((s for s in evaluation['segments']
-                            if s['start'] == route[j] and s['end'] == route[j + 1]), None)
-            
-            if segment:
-                start_coords_str = G.nodes[route[j]]['coords'].split(',')
-                end_coords_str = G.nodes[route[j+1]]['coords'].split(',')
-
-                # Fix: properly assign start_lon, start_lat, end_lon, end_lat
-                start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-                end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-
-                mode = segment['mode']
-                
-                # Create paths based on transport mode
-                if mode == 'road' and 'geometry' in segment:
-                    # Use actual road geometry for roads
-                    points = polyline.decode(segment['geometry'])
-                    
-                    folium.PolyLine(
-                        locations=points,
-                        color=route_color,
-                        weight=4,
-                        tooltip=f"Route {i+1} - Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add vehicle icon at middle of segment
-                    mid_idx = len(points) // 2
-                    if mid_idx < len(points):
-                        folium.Marker(
-                            points[mid_idx],
-                            tooltip=f"Route {i+1} - Truck",
-                            icon=folium.Icon(icon='truck', prefix='fa', color=route_color)
-                        ).add_to(m)
-                    
-                elif mode == 'air':
-                    # Create curved path for flights
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=4,
-                        dash_array='5, 10',
-                        tooltip=f"Route {i+1} - Air: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add plane icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx],
-                        tooltip=f"Route {i+1} - Flight",
-                        icon=folium.Icon(icon='plane', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-                elif mode == 'sea':
-                    # Create curved path for shipping
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=5,
-                        dash_array='10, 15',
-                        tooltip=f"Route {i+1} - Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add ship icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx], 
-                        tooltip=f"Route {i+1} - Ship",
-                        icon=folium.Icon(icon='ship', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-        # Add route summary on the map
-        folium.map.Marker(
-            [start_lat + i*2, start_lon - 15],
-            icon=folium.DivIcon(
-                icon_size=(250, 36),
-                icon_anchor=(0, 0),
-                html=f"""
-                <div style="font-size: 12pt; color: {route_color}; background-color: white; 
-                        border: 2px solid {route_color}; border-radius: 3px; padding: 3px">
-                    <b>Route {i+1}:</b> ₹{evaluation['total_cost']:.2f}, {evaluation['total_time']:.1f} hrs
-                </div>
-                """
-            )
-        ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "top_routes_map.html"
-    m.save(output_file)
-    print(f"\nMap with top {min(num_routes, len(ranked_routes))} routes saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
-
-# -------------------------------------------------------------------------
-# MAIN FUNCTION
-# -------------------------------------------------------------------------
-def main():
+def get_routing(source: str, destination: str, priority_choice: str, goods_type_choice: str, cargo_weight: float) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
     Main function to run the multi-modal logistics route optimizer
     """
@@ -1150,18 +878,6 @@ def main():
     
     print("Multi-Modal Logistics Route Optimizer")
     print("====================================\n")
-    
-    # Get user inputs
-    print("Please enter the following information:")
-    source = input("Source location (city name or coordinates): ")
-    destination = input("Destination location (city name or coordinates): ")
-    
-    # Priority selection
-    print("\nOptimization priority:")
-    print("1. Minimize Cost")
-    print("2. Minimize Time")
-    print("3. Balanced (weighted combination)")
-    priority_choice = input("Enter your choice (1-3): ")
     
     priority_int = 3  # Default to balanced
     if priority_choice == "1":
@@ -1174,15 +890,6 @@ def main():
         priority = "weighted"
         priority_int = 3
     
-    # Get cargo details
-    print("\nCargo type:")
-    print("1. Standard")
-    print("2. Perishable")
-    print("3. Hazardous")
-    print("4. Fragile")
-    print("5. Oversized")
-    print("6. High Value")
-    goods_type_choice = input("Select cargo type (1-6): ")
     goods_type_map = {
         "1": "standard",
         "2": "perishable",
@@ -1191,12 +898,12 @@ def main():
         "5": "oversized",
         "6": "high_value"
     }
+     
     goods_type = goods_type_map.get(goods_type_choice, "standard")
     print(f"Selected cargo type: {goods_type.title()} (cost multiplier: {GOODS_TYPE_MULTIPLIER[goods_type]}x)")
+
     
-    cargo_weight = float(input("\nCargo weight (kg): "))
-    
-    # Load data from CSV files
+     # Load data from CSV files
     print("\nLoading transportation data...")
     flights_csv = "cargo_flights (1).csv"
     shipping_csv = "cargo_shipping.csv"
@@ -1320,25 +1027,6 @@ def main():
         print(f"\nROUTE OPTION {i+1}:")
         print_route_details(route, evaluation)
     
-    if unique_ranked_routes:
-        print("\nGenerating visualization for top routes...")
-        visualize_top_routes(G, unique_ranked_routes, num_routes=max_display)
-    
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
-if __name__ == "__main__":
-    # Make sure all required libraries are imported
-    try:
-        import requests
-        import pandas as pd
-        import networkx as nx
-        import numpy as np
-        import folium
-    except ImportError as e:
-        print(f"Error: Missing required library - {e}")
-        print("Please install all required libraries with:")
-        print("pip install requests pandas networkx matplotlib numpy folium pymoo")
-        exit(1)
-        
-    # Run the main function
-    main()
+    return unique_ranked_routes
