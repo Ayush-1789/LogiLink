@@ -72,6 +72,16 @@ export default function RouteDetails() {
               </span>
             </div>
           </div>
+          {/* New box for total emissions */}
+          <div className="overview-card">
+            <span className="overview-icon emissions-icon">🌿</span>
+            <div className="overview-details">
+              <span className="overview-label">Total Emissions</span>
+              <span className="overview-value">
+                {selectedRoute.co2Emissions}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
