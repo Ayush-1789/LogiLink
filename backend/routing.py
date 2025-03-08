@@ -171,6 +171,37 @@ def load_shipping_data(filepath: str) -> pd.DataFrame:
         print(f"Error: Shipping data file {filepath} not found.")
         return pd.DataFrame()
 
+def load_container_data(filepath: str) -> pd.DataFrame:
+    """Load container specifications from CSV file"""
+    try:
+        df = pd.read_csv(filepath)
+        # Ensure numeric conversion for capacity
+        df["Weight Capacity (kg)"] = pd.to_numeric(df["Weight Capacity (kg)"], errors='coerce')
+        return df
+    except FileNotFoundError:
+        print(f"Warning: Container data file {filepath} not found")
+        return pd.DataFrame()
+
+def get_container_type(mode: str, weight: float, container_df: pd.DataFrame) -> Tuple[str, bool]:
+    """
+    Determine appropriate container type for given mode and weight.
+    Returns (container_type, is_exceeding) tuple.
+    """
+    # Filter containers for specific mode
+    mode_containers = container_df[container_df["Transport Mode"].str.lower() == mode.lower()]
+    if mode_containers.empty:
+        return "Unknown container type", False
+    
+    # Sort by capacity to find smallest suitable container
+    mode_containers = mode_containers.sort_values("Weight Capacity (kg)")
+    
+    suitable = mode_containers[mode_containers["Weight Capacity (kg)"] >= weight]
+    if suitable.empty:
+        max_container = mode_containers.iloc[-1]
+        return f"Exceeds {max_container['Container Type']} capacity ({max_container['Weight Capacity (kg)']} kg)", True
+    
+    return suitable.iloc[0]["Container Type"], False
+
 def load_location_database(filepath="city_coordinates.csv") -> Dict[str, Dict[str, Any]]:
     """
     Load location data from CSV file into a dictionary
@@ -953,7 +984,8 @@ def create_arc_path(start, end, num_points=10):
     
     return points
 
-def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
+def print_route_details(route: List[str], evaluation: Dict[str, Any], 
+                       cargo_weight: float = 0, container_df: pd.DataFrame = None) -> None:
     """
     Print detailed information about a route
     """
@@ -987,8 +1019,16 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
         if segment.get('customs_cost', 0) > 0:
             print(f"    Customs/Tariff: ₹{segment['customs_cost']:.2f}")
         print(f"    Total Segment Cost: ₹{segment['total_segment_cost']:.2f}")
+        
+        # Add container information if available
+        if container_df is not None and segment['mode'] in ['road', 'air', 'sea']:
+            container_type, exceeds = get_container_type(segment['mode'], cargo_weight, container_df)
+            print(f"    Container: {container_type}")
+            if exceeds:
+                print("    WARNING: Cargo weight exceeds container capacity!")
+        
         print()
-    
+
     print("=" * 60)
 
 def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, Any]]]) -> None:
@@ -1015,7 +1055,8 @@ def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, An
     print("\n" + "=" * 80)
 
 def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dict[str, Any]]], 
-                         num_routes: int = 3) -> None:
+                         num_routes: int = 3, cargo_weight: float = 0, 
+                         container_df: pd.DataFrame = None) -> None:
     """
     Create a visualization of multiple top routes on a single map
     """
@@ -1075,6 +1116,25 @@ def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dic
 
                 mode = segment['mode']
                 
+                # Get container info
+                container_type, exceeds = get_container_type(segment['mode'], 
+                                                           cargo_weight, 
+                                                           container_df) if container_df is not None else ("N/A", False)
+                container_info = f"\nContainer: {container_type}"
+                if exceeds:
+                    container_info += " (WARNING: Weight limit exceeded)"
+                
+                # Update tooltip text for each mode
+                if mode == 'road':
+                    tooltip = f"Route {i+1} - Road: {segment['time_hr']:.1f} hrs, " \
+                            f"₹{segment['total_segment_cost']:.2f}{container_info}"
+                elif mode == 'air':
+                    tooltip = f"Route {i+1} - Air: {segment['time_hr']:.1f} hrs, " \
+                            f"₹{segment['total_segment_cost']:.2f}{container_info}"
+                elif mode == 'sea':
+                    tooltip = f"Route {i+1} - Sea: {segment['time_hr']:.1f} hrs, " \
+                            f"₹{segment['total_segment_cost']:.2f}{container_info}"
+                
                 # Create paths based on transport mode
                 if mode == 'road' and 'geometry' in segment:
                     # Use actual road geometry for roads
@@ -1084,7 +1144,7 @@ def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dic
                         locations=points,
                         color=route_color,
                         weight=4,
-                        tooltip=f"Route {i+1} - Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
+                        tooltip=tooltip
                     ).add_to(m)
                     
                     # Add vehicle icon at middle of segment
@@ -1105,7 +1165,7 @@ def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dic
                         color=route_color,
                         weight=4,
                         dash_array='5, 10',
-                        tooltip=f"Route {i+1} - Air: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
+                        tooltip=tooltip
                     ).add_to(m)
                     
                     # Add plane icon
@@ -1125,7 +1185,7 @@ def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dic
                         color=route_color,
                         weight=5,
                         dash_array='10, 15',
-                        tooltip=f"Route {i+1} - Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
+                        tooltip=tooltip
                     ).add_to(m)
                     
                     # Add ship icon
@@ -1223,6 +1283,8 @@ def main():
     
     flight_data = load_flight_data(flights_csv)
     shipping_data = load_shipping_data(shipping_csv)
+    # Load container data early
+    container_df = load_container_data("containers.csv")
     
     if flight_data.empty or shipping_data.empty:
         print("Error: Could not load required data files")
@@ -1358,13 +1420,17 @@ def main():
     max_display = min(3, len(unique_ranked_routes))
     print(f"\nTop {max_display} recommended routes:")
     
+    # Now container_df is available when we call print_route_details
     for i, (route, evaluation) in enumerate(unique_ranked_routes[:max_display]):
         print(f"\nROUTE OPTION {i+1}:")
-        print_route_details(route, evaluation)
+        print_route_details(route, evaluation, cargo_weight, container_df)
     
     if unique_ranked_routes:
         print("\nGenerating visualization for top routes...")
-        visualize_top_routes(G, unique_ranked_routes, num_routes=max_display)
+        visualize_top_routes(G, unique_ranked_routes, 
+                           num_routes=max_display,
+                           cargo_weight=cargo_weight,
+                           container_df=container_df)
     
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
