@@ -1,4 +1,4 @@
-departure_airport,arrival_airport,Distance (km),travel_time,cost
+departure_airport,arrival_airport,distance_km,travel_time,cost
 DEL,ATL,13200,16,337.5
 BOM,LAX,14000,18,375
 BLR,ORD,13500,17,360
