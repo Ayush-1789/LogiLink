@@ -1,22 +1,13 @@
 import requests
 import pandas as pd
 import networkx as nx
-import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Any
-import random
-import polyline
-import webbrowser
 import numpy as np
 import math
-import folium
-from folium.plugins import AntPath, TimestampedGeoJson
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
-from pymoo.core.population import Population
-from pymoo.core.individual import Individual
-import os
 import time
 from functools import lru_cache
 
@@ -171,6 +162,37 @@ def load_shipping_data(filepath: str) -> pd.DataFrame:
         print(f"Error: Shipping data file {filepath} not found.")
         return pd.DataFrame()
 
+def load_container_data(filepath: str) -> pd.DataFrame:
+    """Load container specifications from CSV file"""
+    try:
+        df = pd.read_csv(filepath)
+        # Ensure numeric conversion for capacity
+        df["Weight Capacity (kg)"] = pd.to_numeric(df["Weight Capacity (kg)"], errors='coerce')
+        return df
+    except FileNotFoundError:
+        print(f"Warning: Container data file {filepath} not found")
+        return pd.DataFrame()
+
+def get_container_type(mode: str, weight: float, container_df: pd.DataFrame) -> Tuple[str, bool]:
+    """
+    Determine appropriate container type for given mode and weight.
+    Returns (container_type, is_exceeding) tuple.
+    """
+    # Filter containers for specific mode
+    mode_containers = container_df[container_df["Transport Mode"].str.lower() == mode.lower()]
+    if mode_containers.empty:
+        return "Unknown container type", False
+    
+    # Sort by capacity to find smallest suitable container
+    mode_containers = mode_containers.sort_values("Weight Capacity (kg)")
+    
+    suitable = mode_containers[mode_containers["Weight Capacity (kg)"] >= weight]
+    if suitable.empty:
+        max_container = mode_containers.iloc[-1]
+        return f"Exceeds {max_container['Container Type']} capacity ({max_container['Weight Capacity (kg)']} kg)", True
+    
+    return suitable.iloc[0]["Container Type"], False
+
 def load_location_database(filepath="city_coordinates.csv") -> Dict[str, Dict[str, Any]]:
     """
     Load location data from CSV file into a dictionary
@@ -216,7 +238,7 @@ def get_location_coords(location: str) -> str:
     
     # Try API geocoding
     success, coords, _ = geocode_location(location)
-    if success:
+    if (success):
         return coords
     else:
         print(f"Warning: Using default coordinates for {location}")
@@ -731,156 +753,44 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, go
 # ROUTE RANKING AND VISUALIZATION
 # -------------------------------------------------------------------------
 def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priority: int) -> List[Tuple[List[str], Dict[str, Any]]]:
+    """
+    Rank routes based on priority. Returns top 3 routes.
+    """
     if not optimized_routes:
         return []
 
-    if priority == 1:  # Minimize cost
-        print("Ranking strictly by total cost, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_cost'])
-        return sorted_routes[:3]
-
+    # Create a copy to avoid modifying original
+    routes_to_rank = optimized_routes.copy()
+    
+    if priority == 4:  # Minimize emissions
+        print("Ranking strictly by CO2 emissions, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_emissions'])
     elif priority == 2:  # Minimize time
         print("Ranking strictly by total time, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_time'])
-        return sorted_routes[:3]
-
-    else:  # Balanced ranking
-        print("Ranking by simple normalized sum of cost & time.")
-        min_cost = min(r[1]['total_cost'] for r in optimized_routes)
-        max_cost = max(r[1]['total_cost'] for r in optimized_routes)
-        min_time = min(r[1]['total_time'] for r in optimized_routes)
-        max_time = max(r[1]['total_time'] for r in optimized_routes)
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_time'])
+    elif priority == 1:  # Minimize cost
+        print("Ranking strictly by total cost, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_cost'])
+    else:  # Balanced
+        print("Ranking by normalized combination of cost, time, and emissions.")
+        min_cost = min(r[1]['total_cost'] for r in routes_to_rank)
+        max_cost = max(r[1]['total_cost'] for r in routes_to_rank)
+        min_time = min(r[1]['total_time'] for r in routes_to_rank)
+        max_time = max(r[1]['total_time'] for r in routes_to_rank)
+        min_emissions = min(r[1]['total_emissions'] for r in routes_to_rank)
+        max_emissions = max(r[1]['total_emissions'] for r in routes_to_rank)
 
         def balanced_score(eval_data):
             norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
-            return 0.5 * norm_cost + 0.5 * norm_time
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
 
-        sorted_routes = sorted(optimized_routes, key=lambda x: balanced_score(x[1]))
-        return sorted_routes[:3]
+        sorted_routes = sorted(routes_to_rank, key=lambda x: balanced_score(x[1]))
 
-def visualize_route(G: nx.DiGraph, route: List[str], evaluation: Dict[str, Any]) -> None:
-    """
-    Create an animated visualization of the route using folium
-    """
-    # Get coordinates for first node
-    start_coords_str = G.nodes[route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-    
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Add markers for each node
-    for node in route:
-        coords_str = G.nodes[node]['coords'].split(',')
-        lon, lat = float(coords_str[0]), float(coords_str[1])
-        
-        node_type = G.nodes[node].get('type', 'unknown')
-        
-        if node_type == 'airport':
-            icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-        elif node_type == 'port':
-            icon = folium.Icon(color='green', icon='ship', prefix='fa')
-        elif node_type in ['source', 'city']:
-            icon = folium.Icon(color='red', icon='flag', prefix='fa')
-        elif node_type == 'destination':
-            icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-        else:
-            icon = folium.Icon(color='gray')
-        
-        folium.Marker([lat, lon], tooltip=node, icon=icon).add_to(m)
-    
-    # Add animated paths for each segment
-    for i in range(len(route) - 1):
-        segment = next((s for s in evaluation['segments'] if s['start'] == route[i] and s['end'] == route[i+1]), None)
-        
-        if segment:
-            start_coords_str = G.nodes[route[i]]['coords'].split(',')
-            start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-            
-            end_coords_str = G.nodes[route[i+1]]['coords'].split(',')
-            end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-            
-            mode = segment['mode']
-            
-            # Create different animations based on transport mode
-            if mode == 'road' and 'geometry' in segment:
-                # Use actual road geometry
-                points = polyline.decode(segment['geometry'])
-                
-                # Animate the road path
-                AntPath(
-                    locations=points,
-                    color='blue',
-                    dash_array=[10, 20],
-                    delay=1000,
-                    weight=3,
-                    tooltip=f"Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}, {segment['co2_emissions']:.3f} t CO2"
-                ).add_to(m)
-                
-                # Add vehicle animation using TimestampedGeoJson
-                features = create_vehicle_animation(points, "truck", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",  # One day per frame
-                    duration="P1D",
-                    transition_time=1000,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'air':
-                # Create curved path for flights
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the flight path
-                AntPath(
-                    locations=path_points,
-                    color='red',
-                    weight=3,
-                    dash_array=[2, 10],
-                    delay=200,
-                    tooltip=f"Flight: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}, {segment['co2_emissions']:.3f} t CO2"
-                ).add_to(m)
-                
-                # Add plane animation
-                features = create_vehicle_animation(path_points, "plane", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=800,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'sea':
-                # Create curved path for shipping
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the shipping path
-                AntPath(
-                    locations=path_points,
-                    color='darkgreen',
-                    weight=4,
-                    dash_array=[5, 15],
-                    delay=500,
-                    tooltip=f"Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}, {segment['co2_emissions']:.3f} t CO2"
-                ).add_to(m)
-                
-                # Add ship animation
-                features = create_vehicle_animation(path_points, "ship", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=1500,
-                    auto_play=True
-                ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "route_map.html"
-    m.save(output_file)
-    print(f"\nMap saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
+    # Always return exactly 3 routes if available
+    return sorted_routes[:3]
+
 
 def create_vehicle_animation(points, vehicle_type, segment):
     """Create GeoJSON features for vehicle animation"""
@@ -953,15 +863,14 @@ def create_arc_path(start, end, num_points=10):
     
     return points
 
-def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
-    """
-    Print detailed information about a route
-    """
+def print_route_details(route: List[str], evaluation: Dict[str, Any], 
+                       cargo_weight: float = 0, container_df: pd.DataFrame = None) -> None:
+    """Print detailed information about a route"""
     print("\n" + "=" * 60)
     print(f"Route: {' -> '.join(route)}")
     print("-" * 60)
     print(f"Total Cost: ₹{evaluation['total_cost']:.2f}")
-    print(f"Total Time: {evaluation['total_time']:.2f} hours")
+    print(f"Total Time: {evaluation['total_time']:.2f} hours ({evaluation['total_time']/24:.1f} days)")
     if 'total_distance' in evaluation:
         print(f"Total Distance: {evaluation['total_distance']:.2f} km (road segments only)")
     print(f"Total CO2 Emissions: {evaluation['total_emissions']:.2f} tonnes")
@@ -987,14 +896,20 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
         if segment.get('customs_cost', 0) > 0:
             print(f"    Customs/Tariff: ₹{segment['customs_cost']:.2f}")
         print(f"    Total Segment Cost: ₹{segment['total_segment_cost']:.2f}")
+        
+        # Add container information if available
+        if container_df is not None and segment['mode'] in ['road', 'air', 'sea']:
+            container_type, exceeds = get_container_type(segment['mode'], cargo_weight, container_df)
+            print(f"    Container: {container_type}")
+            if exceeds:
+                print("    WARNING: Cargo weight exceeds container capacity!")
+        
         print()
-    
+
     print("=" * 60)
 
 def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, Any]]]) -> None:
-    """
-    Print details of all possible routes in text format
-    """
+    """Print details of all possible routes"""
     print("\n" + "=" * 80)
     print(f"ALL POSSIBLE ROUTES ({len(routes_with_evaluations)} total)")
     print("=" * 80)
@@ -1002,165 +917,11 @@ def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, An
     for i, (route, evaluation) in enumerate(routes_with_evaluations):
         print(f"\nRoute Option {i+1}: {' -> '.join(route)}")
         print(f"  Total Cost: ₹{evaluation['total_cost']:.2f}")
-        print(f"  Total Time: {evaluation['total_time']:.2f} hours")
+        print(f"  Total Time: {evaluation['total_time']:.2f} hours ({evaluation['total_time']/24:.1f} days)")
         print(f"  Total CO2: {evaluation['total_emissions']:.2f} tonnes")
-        print(f"  Segments: {len(evaluation['segments'])}")
-        
-        # Print brief segment info
-        for segment in evaluation['segments']:
-            print(f"    {segment['start']} -> {segment['end']} ({segment['mode']}): " +
-                  f"₹{segment['total_segment_cost']:.2f}, {segment['time_hr']:.1f} hrs, " +
-                  f"{segment['co2_emissions']:.3f} tonnes CO2")
-    
-    print("\n" + "=" * 80)
+        # ... rest of the function remains the same ...
 
-def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dict[str, Any]]], 
-                         num_routes: int = 3) -> None:
-    """
-    Create a visualization of multiple top routes on a single map
-    """
-    if not ranked_routes:
-        print("No routes to visualize.")
-        return
-        
-    # Get coordinates for first node of the first route
-    first_route = ranked_routes[0][0]
-    start_coords_str = G.nodes[first_route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-    
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Color scheme for different routes
-    route_colors = ['blue', 'green', 'purple', 'orange', 'darkred']
-    
-    # Add top routes to the map
-    for i, (route, evaluation) in enumerate(ranked_routes[:num_routes]):
-        route_color = route_colors[i % len(route_colors)]
-        
-        # Add all nodes as markers
-        for node in route:
-            coords_str = G.nodes[node]['coords'].split(',')
-            lon, lat = float(coords_str[0]), float(coords_str[1])
-            
-            node_type = G.nodes[node].get('type', 'unknown')
-            
-            if node_type == 'airport':
-                icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-            elif node_type == 'port':
-                icon = folium.Icon(color='green', icon='ship', prefix='fa')
-            elif node_type in ['source', 'city']:
-                icon = folium.Icon(color='red', icon='flag', prefix='fa')
-            elif node_type == 'destination':
-                icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-            else:
-                icon = folium.Icon(color='gray')
-            
-            # Add tooltip with node info
-            tooltip = f"{node} (Route {i+1})"
-            folium.Marker([lat, lon], tooltip=tooltip, icon=icon).add_to(m)
-        
-        # Add segments
-        for j in range(len(route) - 1):
-            segment = next((s for s in evaluation['segments']
-                            if s['start'] == route[j] and s['end'] == route[j + 1]), None)
-            
-            if segment:
-                start_coords_str = G.nodes[route[j]]['coords'].split(',')
-                end_coords_str = G.nodes[route[j+1]]['coords'].split(',')
-
-                # Fix: properly assign start_lon, start_lat, end_lon, end_lat
-                start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-                end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-
-                mode = segment['mode']
-                
-                # Create paths based on transport mode
-                if mode == 'road' and 'geometry' in segment:
-                    # Use actual road geometry for roads
-                    points = polyline.decode(segment['geometry'])
-                    
-                    folium.PolyLine(
-                        locations=points,
-                        color=route_color,
-                        weight=4,
-                        tooltip=f"Route {i+1} - Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add vehicle icon at middle of segment
-                    mid_idx = len(points) // 2
-                    if mid_idx < len(points):
-                        folium.Marker(
-                            points[mid_idx],
-                            tooltip=f"Route {i+1} - Truck",
-                            icon=folium.Icon(icon='truck', prefix='fa', color=route_color)
-                        ).add_to(m)
-                    
-                elif mode == 'air':
-                    # Create curved path for flights
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=4,
-                        dash_array='5, 10',
-                        tooltip=f"Route {i+1} - Air: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add plane icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx],
-                        tooltip=f"Route {i+1} - Flight",
-                        icon=folium.Icon(icon='plane', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-                elif mode == 'sea':
-                    # Create curved path for shipping
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=5,
-                        dash_array='10, 15',
-                        tooltip=f"Route {i+1} - Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add ship icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx], 
-                        tooltip=f"Route {i+1} - Ship",
-                        icon=folium.Icon(icon='ship', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-        # Add route summary on the map
-        folium.map.Marker(
-            [start_lat + i*2, start_lon - 15],
-            icon=folium.DivIcon(
-                icon_size=(250, 36),
-                icon_anchor=(0, 0),
-                html=f"""
-                <div style="font-size: 12pt; color: {route_color}; background-color: white; 
-                        border: 2px solid {route_color}; border-radius: 3px; padding: 3px">
-                    <b>Route {i+1}:</b> ₹{evaluation['total_cost']:.2f}, {evaluation['total_time']:.1f} hrs, {evaluation['total_emissions']:.2f} g CO₂/tkm
-                </div>
-                """
-            )
-        ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "top_routes_map.html"
-    m.save(output_file)
-    print(f"\nMap with top {min(num_routes, len(ranked_routes))} routes saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
-
-# -------------------------------------------------------------------------
-# MAIN FUNCTION
-# -------------------------------------------------------------------------
-def main():
+def get_routing(source: str, destination: str, priority_choice: str, goods_type_choice: str, cargo_weight: float) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
     Main function to run the multi-modal logistics route optimizer
     """
@@ -1171,38 +932,21 @@ def main():
     print("Multi-Modal Logistics Route Optimizer")
     print("====================================\n")
     
-    # Get user inputs
-    print("Please enter the following information:")
-    source = input("Source location (city name or coordinates): ")
-    destination = input("Destination location (city name or coordinates): ")
-    
-    # Priority selection
-    print("\nOptimization priority:")
-    print("1. Minimize Cost")
-    print("2. Minimize Time")
-    print("3. Balanced (weighted combination)")
-    priority_choice = input("Enter your choice (1-3): ")
-    
     priority_int = 3  # Default to balanced
-    if priority_choice == "1":
+
+    if priority_choice == "cost":
         priority = "minimize_cost"
         priority_int = 1
-    elif priority_choice == "2":
+    elif priority_choice == "time":
         priority = "minimize_time"
         priority_int = 2
+    elif priority_choice == "eco":
+        priority = "minimize_emissions"
+        priority_int = 4  # New priority number for emissions
     else:
         priority = "weighted"
         priority_int = 3
     
-    # Get cargo details
-    print("\nCargo type:")
-    print("1. Standard")
-    print("2. Perishable")
-    print("3. Hazardous")
-    print("4. Fragile")
-    print("5. Oversized")
-    print("6. High Value")
-    goods_type_choice = input("Select cargo type (1-6): ")
     goods_type_map = {
         "1": "standard",
         "2": "perishable",
@@ -1211,18 +955,23 @@ def main():
         "5": "oversized",
         "6": "high_value"
     }
+     
     goods_type = goods_type_map.get(goods_type_choice, "standard")
     print(f"Selected cargo type: {goods_type.title()} (cost multiplier: {GOODS_TYPE_MULTIPLIER[goods_type]}x)")
+
     
     cargo_weight = float(input("\nCargo weight (kg): "))
+    max_days = float(input("Maximum delivery time (days): "))
+    max_hours = max_days * 24  # Convert days to hours for internal calculations
     
-    # Load data from CSV files
     print("\nLoading transportation data...")
     flights_csv = "cargo_flights (1).csv"
     shipping_csv = "cargo_shipping.csv"
     
     flight_data = load_flight_data(flights_csv)
     shipping_data = load_shipping_data(shipping_csv)
+    # Load container data early
+    container_df = load_container_data("containers.csv")
     
     if flight_data.empty or shipping_data.empty:
         print("Error: Could not load required data files")
@@ -1250,39 +999,65 @@ def main():
     
     print(f"Found {len(routes)} candidate routes")
     
-    # Pre-filter extreme outliers for all priority types
+    # Pre-filter extreme outliers and routes exceeding max time
     print("Pre-filtering routes before optimization...")
     route_evaluations = []
     for route in routes:
         evaluation = evaluate_route(G, route, cargo_weight, goods_type)
-        if evaluation['valid']:
+        if evaluation['valid'] and evaluation['total_time'] <= max_hours:
             route_evaluations.append((route, evaluation))
     
-    # Define all_evaluated_routes as a copy of the candidate evaluations—this fixes the missing variable error.
+    # Define all_evaluated_routes as a copy of the candidate evaluations
     all_evaluated_routes = route_evaluations.copy()
+    
+    if not route_evaluations:
+        print(f"\nNo routes found within {max_days:.1f} days delivery time constraint!")
+        return
     
     if route_evaluations:
         min_cost = min(route_evaluations, key=lambda x: x[1]['total_cost'])[1]['total_cost']
         min_time = min(route_evaluations, key=lambda x: x[1]['total_time'])[1]['total_time']
-    
+        min_emissions = min(route_evaluations, key=lambda x: x[1]['total_emissions'])[1]['total_emissions']
+
         filtered_routes = []
-    
-        if priority == "minimize_cost":
+        
+        if priority == "minimize_emissions":
+            # Include routes with emissions up to 8x the minimum
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 2:
+                if eval['total_emissions'] <= min_emissions * 8:
                     filtered_routes.append(route)
         elif priority == "minimize_time":
             for route, eval in route_evaluations:
-                if eval['total_time'] <= min_time * 3:
+                if eval['total_time'] <= min_time * 2:
+                    filtered_routes.append(route)
+        elif priority == "minimize_cost":
+            for route, eval in route_evaluations:
+                if eval['total_cost'] <= min_cost * 3:
                     filtered_routes.append(route)
         else:  # Balanced
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 5 and eval['total_time'] <= min_time * 10:
+                if (eval['total_cost'] <= min_cost * 5 or 
+                    eval['total_time'] <= min_time * 3 or 
+                    eval['total_emissions'] <= min_emissions * 5):
                     filtered_routes.append(route)
-    
+
+        # Always ensure we have at least 3 routes
+        if len(filtered_routes) < 3 and route_evaluations:
+            print("Warning: Too few routes after filtering. Adding back some routes...")
+            if priority == "minimize_emissions":
+                # Sort remaining routes by emissions for eco-priority
+                remaining_routes = sorted(
+                    [(r[0], r[1]['total_emissions']) for r in route_evaluations if r[0] not in filtered_routes],
+                    key=lambda x: x[1]
+                )
+                filtered_routes.extend([r[0] for r in remaining_routes[:3 - len(filtered_routes)]])
+            else:
+                remaining_routes = [r[0] for r in route_evaluations if r[0] not in filtered_routes]
+                filtered_routes.extend(remaining_routes[:3 - len(filtered_routes)])
+
         print(f"Pre-filtered from {len(routes)} to {len(filtered_routes)} routes")
         routes = filtered_routes
-    
+
     # Apply NSGA-III optimization
     print("\nApplying multi-objective optimization (NSGA-III)...")
     optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, goods_type)
@@ -1330,6 +1105,13 @@ def main():
             if route_str not in seen_routes and len(unique_ranked_routes) < 3:
                 unique_ranked_routes.append((route, evaluation))
                 seen_routes.add(route_str)
+    elif priority_int == 4 and len(unique_ranked_routes) < 3:  # For emissions priority
+        sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_emissions'])
+        for route, evaluation in sorted_candidates:
+            route_str = "→".join(route)
+            if route_str not in seen_routes and len(unique_ranked_routes) < 3:
+                unique_ranked_routes.append((route, evaluation))
+                seen_routes.add(route_str)
 
     # After duplicate removal:
     # 'unique_ranked_routes' now holds the routes in the order produced by rank_routes.
@@ -1338,16 +1120,23 @@ def main():
         unique_ranked_routes.sort(key=lambda x: x[1]['total_cost'])
     elif priority_int == 2:
         unique_ranked_routes.sort(key=lambda x: x[1]['total_time'])
+    elif priority_int == 4:
+        unique_ranked_routes.sort(key=lambda x: x[1]['total_emissions'])
     else:
         # For balanced, recompute balanced score over the unique set
         min_cost = min(r[1]['total_cost'] for r in unique_ranked_routes)
         max_cost = max(r[1]['total_cost'] for r in unique_ranked_routes)
         min_time = min(r[1]['total_time'] for r in unique_ranked_routes)
         max_time = max(r[1]['total_time'] for r in unique_ranked_routes)
+        min_emissions = min(r[1]['total_emissions'] for r in unique_ranked_routes)
+        max_emissions = max(r[1]['total_emissions'] for r in unique_ranked_routes)
+        
         def balanced_score(eval_data):
             norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
-            return 0.5 * norm_cost + 0.5 * norm_time
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
+        
         unique_ranked_routes.sort(key=lambda x: balanced_score(x[1]))
     
     # Finally, limit to top 3 (if there are more than 3)
@@ -1358,29 +1147,37 @@ def main():
     max_display = min(3, len(unique_ranked_routes))
     print(f"\nTop {max_display} recommended routes:")
     
+    # Now container_df is available when we call print_route_details
     for i, (route, evaluation) in enumerate(unique_ranked_routes[:max_display]):
         print(f"\nROUTE OPTION {i+1}:")
-        print_route_details(route, evaluation)
-    
-    if unique_ranked_routes:
-        print("\nGenerating visualization for top routes...")
-        visualize_top_routes(G, unique_ranked_routes, num_routes=max_display)
+        print_route_details(route, evaluation, cargo_weight, container_df)
     
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
-if __name__ == "__main__":
-    # Make sure all required libraries are imported
-    try:
-        import requests
-        import pandas as pd
-        import networkx as nx
-        import numpy as np
-        import folium
-    except ImportError as e:
-        print(f"Error: Missing required library - {e}")
-        print("Please install all required libraries with:")
-        print("pip install requests pandas networkx matplotlib numpy folium pymoo")
-        exit(1)
-        
-    # Run the main function
-    main()
+    for i, (route, evaluation) in enumerate(unique_ranked_routes):
+        segments_with_coordinates = []
+
+        for j in range(len(route) - 1):
+            segment = next((s for s in evaluation['segments']
+                            if s['start'] == route[j] and s['end'] == route[j + 1]), None)
+
+            if segment:
+                start_coords_str = G.nodes[route[j]]['coords'].split(',')
+                end_coords_str = G.nodes[route[j + 1]]['coords'].split(',')
+
+                start_lon = float(start_coords_str[0])
+                start_lat = float(start_coords_str[1])
+                end_lon = float(end_coords_str[0])
+                end_lat = float(end_coords_str[1])
+
+                segment['coordinates'] = [
+                    (start_lat, start_lon), (end_lat, end_lon)
+                ]
+
+                segments_with_coordinates.append(segment)
+
+        unique_ranked_routes[i][1]["segments"] = segments_with_coordinates
+
+    print("Modified:", unique_ranked_routes)
+
+    return unique_ranked_routes

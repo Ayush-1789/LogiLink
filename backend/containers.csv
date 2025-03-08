@@ -1,0 +1,7 @@
+Transport Mode,Container Type,Length (m),Width (m),Height (m),Weight Capacity (kg),Dimensional Factor,Base Freight Rate ($)
+Road,20ft Container,6.06,2.44,2.59,30480,N/A,1.5
+Road,40ft Container,12.19,2.44,2.59,32500,N/A,2.0
+Air,LD3 Container,1.56,1.53,1.63,1588,6000,1.5
+Air,LD7 Pallet,2.44,3.18,1.63,6804,6000,2.5
+Sea,20ft TEU,6.06,2.44,2.59,30480,N/A,1000
+Sea,40ft FEU,12.19,2.44,2.59,32500,N/A,1500
