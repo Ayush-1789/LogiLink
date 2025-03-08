@@ -98,10 +98,7 @@ export default function Results() {
           <section className="route-section recommended-section">
             <div className="top-recommendations-header">
               <div className="header-badge">Top 3 Recommended Routes</div>
-              <h2 className="section-title">
-                <span className="section-icon">✨</span>
-                Best {getPriorityLabel()} Options
-              </h2>
+              
               <p className="recommendation-description">
                 These routes are optimized for {getPriorityLabel().toLowerCase()} based on your preferences
               </p>
@@ -160,10 +157,7 @@ export default function Results() {
                     </div>
 
                     <div className="card-footer">
-                      <div className="carrier-info">
-                        <div className="carrier-avatar">{route.carrier?.charAt(0) || '?'}</div>
-                        <span className="carrier-name">{route.carrier || 'Unknown carrier'}</span>
-                      </div>
+                      
                       <button className="details-button">View Details</button>
                     </div>
                   </div>
@@ -238,10 +232,7 @@ export default function Results() {
                       </div>
                       
                       <div className="alt-route-action">
-                        <div className="alt-carrier">
-                          <div className="alt-carrier-logo">{route.carrier?.charAt(0) || '?'}</div>
-                          <span className="alt-carrier-name">{route.carrier || 'Unknown'}</span>
-                        </div>
+                        
                         <button className="alt-details-button">View Details</button>
                       </div>
                     </div>

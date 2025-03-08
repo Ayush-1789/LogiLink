@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from models import Base
 
-database_url = "postgresql+asyncpg://test:test@127.0.0.1:5432/logilink"
+database_url = "postgresql+asyncpg://postgres:Ificouldfly@127.0.0.1:5432/logilink"
 
 engine = create_async_engine(database_url, echo=True, future=True)
 

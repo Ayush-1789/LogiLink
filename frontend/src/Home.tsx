@@ -72,8 +72,24 @@ export default function Home() {
           // Add animation pulse effect when slider value changes
           const valueDisplay = document.querySelector('.perishable-value');
           if (valueDisplay) {
+            valueDisplay.classList.remove('pulse-animation');
+            // Trigger DOM reflow to restart animation
+            void valueDisplay.offsetWidth;
             valueDisplay.classList.add('pulse-animation');
-            setTimeout(() => valueDisplay.classList.remove('pulse-animation'), 300);
+          }
+        };
+
+        // Add this function to handle clicking directly on the markers
+        const handleMarkerClick = (value) => {
+          formikProps.setFieldValue('perishableLevel', value);
+          
+          // Add animation pulse effect when marker is clicked
+          const valueDisplay = document.querySelector('.perishable-value');
+          if (valueDisplay) {
+            valueDisplay.classList.remove('pulse-animation');
+            // Trigger DOM reflow to restart animation
+            void valueDisplay.offsetWidth;
+            valueDisplay.classList.add('pulse-animation');
           }
         };
 
@@ -162,7 +178,13 @@ export default function Home() {
                       <div className="form-field full-width perishable-slider-container">
                         <div className="perishable-header">
                           <label htmlFor="perishableLevel">Perishability Level</label>
-                          <span className="perishable-value" style={{ backgroundColor: perishableColor }}>
+                          <span 
+                            className="perishable-value" 
+                            style={{ 
+                              backgroundColor: perishableColor,
+                              boxShadow: `0 0 8px ${perishableColor}80`
+                            }}
+                          >
                             {formikProps.values.perishableLevel}
                           </span>
                         </div>
@@ -174,29 +196,47 @@ export default function Home() {
                             name="perishableLevel"
                             min="1"
                             max="10"
+                            step="1"
                             value={formikProps.values.perishableLevel}
                             onChange={handlePerishableChange}
                             className="slider-input"
+                          />
+                          <div 
+                            className="slider-track" 
                             style={{
                               background: `linear-gradient(to right, #4CAF50, ${perishableColor}, #D32F2F)`
                             }}
-                          />
-                          <div className="slider-markers">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                              <span 
-                                key={num} 
-                                className={`slider-marker ${num === formikProps.values.perishableLevel ? 'active' : ''}`}
-                                onClick={() => formikProps.setFieldValue('perishableLevel', num)}
-                              >
-                                {num}
-                              </span>
-                            ))}
-                          </div>
+                          ></div>
+                          <div 
+                            className="slider-thumb" 
+                            style={{ 
+                              left: `${((formikProps.values.perishableLevel - 1) / 9) * 100}%`,
+                              backgroundColor: perishableColor,
+                              transform: `translateX(-50%) scale(${formikProps.values.perishableLevel === 10 ? '1.2' : '1'})`
+                            }}
+                          ></div>
+                        </div>
+                        
+                        <div className="slider-markers">
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
+                            <span 
+                              key={num} 
+                              className={`slider-marker ${num === formikProps.values.perishableLevel ? 'active' : ''}`}
+                              onClick={() => handleMarkerClick(num)}
+                              style={{
+                                backgroundColor: num === formikProps.values.perishableLevel ? perishableColor : '',
+                                boxShadow: num === formikProps.values.perishableLevel ? `0 2px 8px ${perishableColor}80` : ''
+                              }}
+                            >
+                              {num}
+                            </span>
+                          ))}
                         </div>
                         
                         <div className="slider-labels">
-                          <span>Less perishable</span>
-                          <span>Highly perishable</span>
+                          <span className="less-perishable">Less perishable</span>
+                         
+                          <span className="highly-perishable">Highly perishable</span>
                         </div>
                       </div>
                     </div>
