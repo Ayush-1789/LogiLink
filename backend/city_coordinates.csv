@@ -1,0 +1,50 @@
+city,country,type,code,lat,lon
+Mumbai,India,city,,19.076,72.8777
+Delhi,India,city,,28.7041,77.1025
+Kolkata,India,city,,22.5726,88.3639
+Chennai,India,city,,13.0827,80.2707
+Bangalore,India,city,,12.9716,77.5946
+Hyderabad,India,city,,17.385,78.4867
+Ahmedabad,India,city,,23.0225,72.5714
+Delhi,India,airport,DEL,28.5562,77.1003
+Mumbai,India,airport,BOM,19.0896,72.8747
+Chennai,India,airport,MAA,12.9941,80.1631
+Bangalore,India,airport,BLR,13.1989,77.7064
+Hyderabad,India,airport,HYD,17.2403,78.4303
+Kolkata,India,airport,CCU,22.6547,88.4467
+Kochi,India,airport,COK,10.1517,76.3232
+Jawaharlal Nehru Port,India,port,INMUN,18.949,72.9581
+Mundra Port,India,port,INMUN2,22.8342,69.7026
+Chennai Port,India,port,INMAA,13.1009,80.2975
+Kolkata Port,India,port,INCCU,22.5448,88.3075
+Kandla Port,India,port,INKAN,23.0347,70.2168
+Visakhapatnam Port,India,port,INVTZ,17.6863,83.2836
+New York,USA,city,,40.7128,-74.006
+Los Angeles,USA,city,,34.0522,-118.2437
+Atlanta,USA,airport,ATL,33.6407,-84.4277
+Los Angeles,USA,airport,LAX,33.9416,-118.4085
+Chicago,USA,airport,ORD,41.9742,-87.9073
+Dallas,USA,airport,DFW,32.8998,-97.0403
+New York,USA,airport,JFK,40.6413,-73.7781
+Miami,USA,airport,MIA,25.7932,-80.287
+San Francisco,USA,airport,SFO,37.6213,-122.379
+Port of Los Angeles,USA,port,USLAX,33.7308,-118.2705
+Port of Long Beach,USA,port,USLGB,33.7542,-118.2023
+Port of New York/New Jersey,USA,port,USNYC,40.67,-74.06
+Port of Savannah,USA,port,USSAV,32.125,-81.127
+Port of Houston,USA,port,USHOU,29.737,-95.261
+Port of Seattle-Tacoma,USA,port,USSEA,47.6062,-122.3321
+Dubai,UAE,city,,25.2048,55.2708
+Dubai,UAE,airport,DXB,25.2532,55.3644
+Abu Dhabi,UAE,airport,AUH,24.433,54.6473
+Sharjah,UAE,airport,SHJ,25.3284,55.5172
+Port of Jebel Ali,UAE,port,AEJEA,24.9857,55.0439
+Port Rashid,UAE,port,AEPRA,25.2836,55.2783
+Port Khalifa,UAE,port,AEKHL,24.8075,54.6375
+Port of Fujairah,UAE,port,AEFUJ,25.1757,56.3347
+Amsterdam,Netherlands,airport,AMS,52.3105,4.7634
+Rotterdam,Netherlands,airport,RTM,51.9496,4.4377
+Eindhoven,Netherlands,airport,EIN,51.45,5.3765
+Port of Rotterdam,Netherlands,port,NLRTM,51.9,4.4167
+Port of Amsterdam,Netherlands,port,NLAMS,52.3702,4.8952
+Port of Moerdijk,Netherlands,port,NLMOE,51.6833,4.5833

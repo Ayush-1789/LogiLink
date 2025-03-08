@@ -1,4 +1,4 @@
-Source Airport,Destination Airport,Carrier Name,Distance (km),Estimated Time (hours),Estimated Cost (INR/kg)
+departure_airport,arrival_airport,Carrier Name,Distance (km),travel_time,cost
 DEL,ATL,Emirates SkyCargo,13200,16.0,337.5
 BOM,LAX,Qatar Airways Cargo,14000,18.0,375.0
 BLR,ORD,Cathay Pacific Cargo,13500,17.0,360.0
