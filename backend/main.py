@@ -1,20 +1,11 @@
-from contextlib import asynccontextmanager
-import json
-from fastapi import Depends, FastAPI
+from fastapi import FastAPI
 from routing import get_routing
 from enum import Enum
 import uvicorn
 from pydantic import BaseModel
 
-# SessionDep = Annotated[AsyncSession, Depends(get_db)]
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-#    await create_tables()
-    yield
-
-
-app = FastAPI(lifespan=lifespan)
+app = FastAPI()
 
 
 class Segment(BaseModel):
