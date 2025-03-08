@@ -30,6 +30,7 @@ class Segment(BaseModel):
     customs_cost: float
     total_segment_cost: float
     geometry: str | None = None
+    coordinates: list[tuple[float, float]]
 
 
 class Data(BaseModel):

@@ -1029,4 +1029,30 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
     
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
+    for i, (route, evaluation) in enumerate(unique_ranked_routes):
+        segments_with_coordinates = []
+
+        for j in range(len(route) - 1):
+            segment = next((s for s in evaluation['segments']
+                            if s['start'] == route[j] and s['end'] == route[j + 1]), None)
+
+            if segment:
+                start_coords_str = G.nodes[route[j]]['coords'].split(',')
+                end_coords_str = G.nodes[route[j + 1]]['coords'].split(',')
+
+                start_lon = float(start_coords_str[0])
+                start_lat = float(start_coords_str[1])
+                end_lon = float(end_coords_str[0])
+                end_lat = float(end_coords_str[1])
+
+                segment['coordinates'] = [
+                    (start_lat, start_lon), (end_lat, end_lon)
+                ]
+
+                segments_with_coordinates.append(segment)
+
+        unique_ranked_routes[i][1]["segments"] = segments_with_coordinates
+
+    print("Modified:", unique_ranked_routes)
+
     return unique_ranked_routes
