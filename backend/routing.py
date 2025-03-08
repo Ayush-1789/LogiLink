@@ -1,15 +1,10 @@
 import requests
 import pandas as pd
 import networkx as nx
-import matplotlib.pyplot as plt
 from typing import Dict, List, Tuple, Any
-import random
-import polyline
 import webbrowser
 import numpy as np
 import math
-import folium
-from folium.plugins import AntPath, TimestampedGeoJson
 from pymoo.algorithms.moo.nsga3 import NSGA3
 from pymoo.util.ref_dirs import get_reference_directions
 from pymoo.core.problem import Problem
@@ -19,6 +14,16 @@ from pymoo.core.individual import Individual
 import os
 import time
 from functools import lru_cache
+
+# Add this after your imports section
+GOODS_TYPE_MULTIPLIER = {
+    'perishable': 1.3,
+    'hazardous': 1.4,
+    'fragile': 1.2,
+    'oversized': 1.5,
+    'high_value': 1.15,
+    'standard': 1.0
+}
 
 # Create a cache for geocoded locations
 location_cache = {}
@@ -44,7 +49,7 @@ def geocode_location(location: str) -> tuple:
         response = requests.get(url, headers=headers)
         data = response.json()
         
-        if data and len(data) > 0:
+        if (data and len(data) > 0):
             # Get coordinates (lon,lat format for OSRM)
             lon = data[0]['lon']
             lat = data[0]['lat']
@@ -171,11 +176,13 @@ def load_location_database(filepath="city_coordinates.csv") -> Dict[str, Dict[st
         return {}
 
 port_coordinates = {
-    'Port of Houston': '-95.2610,29.7370',
-    'Port of Seattle-Tacoma': '-122.3321,47.6062',
-    'Port of Jebel Ali': '55.0439,24.9857',
-    # Add other missing ports as needed
+    'Port of Houston': '-95.297241, 29.614658',  # Correct coordinates
+    'Port of Seattle-Tacoma': '-122.3375,47.5703',  # Correct port coordinates
+    'Port of Jebel Ali': '55.0272904,25.0013084',  # Updated precision
+    'Mumbai Port': '72.8321,18.9517',
+    'Port of Shanghai': '121.677966,31.230416'
 }
+
 
 def get_location_coords(location: str) -> str:
     """
@@ -399,28 +406,27 @@ def find_multimodal_routes(G: nx.DiGraph, source: str, destination: str, max_rou
     # Get airports/ports in destination country with road connections to destination
     dest_airports = [n for n, data in G.nodes(data=True) 
                     if data.get('country') == dest_country and 
-                       data.get('type') == 'airport' and
-                       G.has_edge(n, destination)]
-    
+                    data.get('type') == 'airport' and
+                    G.has_edge(n, destination)]
+
     dest_seaports = [n for n, data in G.nodes(data=True) 
                     if data.get('country') == dest_country and 
-                       data.get('type') == 'port' and
-                       G.has_edge(n, destination)]
-    
-    print(f"Source connections: {len(source_airports)} airports, {len(source_seaports)} seaports")
-    print(f"Destination connections: {len(dest_airports)} airports, {len(dest_seaports)} seaports")
-    
-    # 2. Generate air routes (source -> airport -> airport -> destination)
+                    data.get('type') == 'port' and
+                    G.has_edge(n, destination)]
+
+    # Generate air-sea-air combinations
     for src_airport in source_airports:
-        for dst_airport in dest_airports:
-            if G.has_edge(src_airport, dst_airport):
-                routes.append([source, src_airport, dst_airport, destination])
+        for dest_airport in dest_airports:
+            if G.has_edge(src_airport, dest_airport):
+                routes.append([source, src_airport, dest_airport, destination])
     
-    # 3. Generate sea routes (source -> port -> port -> destination)
+    # Generate sea routes
     for src_port in source_seaports:
-        for dst_port in dest_seaports:
-            if G.has_edge(src_port, dst_port):
-                routes.append([source, src_port, dst_port, destination])
+        for dest_port in dest_seaports:
+            if G.has_edge(src_port, dest_port):
+                routes.append([source, src_port, dest_port, destination])
+    
+    return routes[:max_routes]
     
     print(f"Generated {len(routes)} routes so far")
     
@@ -451,14 +457,17 @@ def find_multimodal_routes(G: nx.DiGraph, source: str, destination: str, max_rou
     print(f"Final route count: {len(routes)}")
     return routes[:max_routes]
 
-def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, perishability: float) -> Dict[str, Any]:
+def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, goods_type: str) -> Dict[str, Any]:
     """
-    Evaluate a route based on total cost, time, and other factors
+    Evaluate a route based on total cost, time, and goods type factor
     """
     total_cost = 0
     total_time = 0
     total_distance = 0
     segments = []
+    
+    # Get multiplier for this goods type
+    multiplier = GOODS_TYPE_MULTIPLIER.get(goods_type, 1.0)
     
     # Go through each segment of the route
     for i in range(len(route) - 1):
@@ -471,38 +480,52 @@ def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, perisha
             
             # Calculate segment metrics
             if mode == 'road':
-                # FIX: Use 'total_cost' instead of 'cost' for road segments
-                segment_cost = edge_data['total_cost']  # Changed from 'cost' to 'total_cost'
+                # Base cost calculation for road
+                segment_cost = edge_data['total_cost']
                 segment_time = edge_data['time_hr']
                 segment_distance = edge_data['distance_km']
-                # Extract geometry data for road segments
                 segment_geometry = edge_data.get('geometry', None)
             elif mode == 'air' or mode == 'sea':
-                # Multiply by weight since cost is per kg
+                # Base cost calculation for air/sea
                 segment_cost = edge_data['cost_per_kg'] * cargo_weight
                 segment_time = edge_data['time_hr']
-                segment_distance = 0  # We don't have distance for air/sea
+                segment_distance = 0
                 segment_geometry = None
             
-            # Add perishability impact - higher penalty for perishable goods over time
-            perishability_impact = 0
-            if perishability > 0:
-                # Exponential penalty for perishable items as time increases
-                perishability_impact = perishability * (segment_time ** 1.5) * 0.1 * cargo_weight
+            # Apply goods type multiplier to the base cost
+            adjusted_cost = segment_cost * multiplier
             
-            # Customs and tariff for international segments (simplified)
+            # Special handling for different goods types
+            goods_impact = 0
+            if goods_type == 'perishable':
+                # Additional time penalty for perishable items
+                goods_impact = (segment_time ** 1.5) * 0.1 * cargo_weight
+            elif goods_type == 'hazardous':
+                # Extra documentation and handling fee
+                goods_impact = segment_cost * 0.2
+            elif goods_type == 'fragile':
+                # Special handling fee
+                goods_impact = segment_cost * 0.1
+            elif goods_type == 'standard' or goods_type == 'raw':
+                # No additional impact for standard goods
+                goods_impact = 0
+            
+            # Customs and tariff for international segments
             customs_cost = 0
             if mode in ['air', 'sea']:
-                # Simple estimate: 5% of the transportation cost
-                customs_cost = segment_cost * 0.05
+                # Higher customs for specialized goods
+                customs_rate = 0.05  # Base rate
+                if goods_type in ['hazardous', 'high_value']:
+                    customs_rate = 0.08  # Higher rate
+                customs_cost = segment_cost * customs_rate
             
-            # Adjust cost with perishability impact and customs
-            segment_total_cost = segment_cost + perishability_impact + customs_cost
+            # Calculate total segment cost with all factors
+            segment_total_cost = adjusted_cost + goods_impact + customs_cost
             
             # Add to totals
             total_cost += segment_total_cost
             total_time += segment_time
-            total_distance += segment_distance if segment_distance else 0  # Air/sea don't have distance
+            total_distance += segment_distance if segment_distance else 0
             
             segment_data = {
                 'start': start,
@@ -510,44 +533,40 @@ def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, perisha
                 'mode': mode,
                 'distance_km': segment_distance if segment_distance else "N/A",
                 'time_hr': segment_time,
-                'cost': segment_cost,
-                'perishability_impact': perishability_impact,
+                'base_cost': segment_cost,
+                'goods_type_multiplier': multiplier,
+                'adjusted_cost': adjusted_cost,
+                'goods_impact': goods_impact,
                 'customs_cost': customs_cost,
                 'total_segment_cost': segment_total_cost
             }
             
-            # Add geometry data if it exists for proper route display
+            # Add geometry data if it exists
             if segment_geometry:
                 segment_data['geometry'] = segment_geometry
                 
             segments.append(segment_data)
         else:
-            # This should not happen if routes are valid
             print(f"Error: No edge between {start} and {end}")
-            return {
-                'valid': False,
-                'total_cost': float('inf'),
-                'total_time': float('inf'),
-                'total_distance': float('inf'),
-                'segments': []
-            }
+            return {'valid': False, 'total_cost': float('inf'), 'total_time': float('inf')}
     
-    # Calculate perishability score (higher is worse)
-    perishability_score = perishability * math.sqrt(total_time) * 10
+    # Calculate goods type impact score for optimization
+    goods_type_score = 0 if goods_type == 'standard' or goods_type == 'raw' else multiplier * math.sqrt(total_time) * 10
     
     return {
         'valid': True,
         'total_cost': total_cost,
         'total_time': total_time,
         'total_distance': total_distance,
-        'perishability_score': perishability_score,
+        'goods_type': goods_type,
+        'goods_type_score': goods_type_score,
         'segments': segments
     }
 
 # -------------------------------------------------------------------------
 # MULTI-OBJECTIVE OPTIMIZATION USING NSGA-III
 # -------------------------------------------------------------------------
-def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_weight: float, perishability: float) -> List[Tuple[List[str], Dict[str, Any]]]:
+def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_weight: float, goods_type: str) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
     Apply NSGA-III multi-objective optimization to find Pareto-optimal routes
     Returns multiple optimized routes
@@ -558,13 +577,13 @@ def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_w
         
     # Create optimization problem
     class RouteOptimizationProblem(Problem):
-        def __init__(self, G, routes, cargo_weight, perishability):
+        def __init__(self, G, routes, cargo_weight, goods_type):
             self.G = G
             self.routes = routes
             self.cargo_weight = cargo_weight
-            self.perishability = perishability
+            self.goods_type = goods_type  # Changed from perishability
             
-            # Define problem (minimize cost, time, perishability impact)
+            # Define problem (minimize cost, time, goods type impact)
             super().__init__(n_var=1,
                             n_obj=3,
                             n_constr=0,
@@ -578,22 +597,27 @@ def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_w
             # Initialize objective arrays
             f1 = np.zeros(len(route_indices))  # Cost
             f2 = np.zeros(len(route_indices))  # Time
-            f3 = np.zeros(len(route_indices))  # Perishability impact
+            f3 = np.zeros(len(route_indices))  # Goods impact
             
             # Evaluate each route
             for i, idx in enumerate(route_indices):
                 route = self.routes[idx]
-                evaluation = evaluate_route(self.G, route, self.cargo_weight, self.perishability)
+                evaluation = evaluate_route(self.G, route, self.cargo_weight, self.goods_type)
                 
                 f1[i] = evaluation['total_cost']
                 f2[i] = evaluation['total_time']
-                f3[i] = evaluation['perishability_score']
+                
+                # Fix: properly set the third objective for standard vs. non-standard goods
+                if self.goods_type == 'standard':
+                    f3[i] = 0
+                else:
+                    f3[i] = evaluation['goods_type_score']
             
             # Set objectives (minimize all)
             out["F"] = np.column_stack([f1, f2, f3])
-            
+
     # Set up the optimization problem
-    problem = RouteOptimizationProblem(G, route_options, cargo_weight, perishability)
+    problem = RouteOptimizationProblem(G, route_options, cargo_weight, goods_type)
     
     # Configure NSGA-III
     ref_dirs = get_reference_directions("das-dennis", 3, n_partitions=12)
@@ -610,9 +634,9 @@ def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_w
     # Get optimized routes with their evaluations
     optimized_routes = []
     for i, x in enumerate(res.X):
-        route_idx = int(x)
+        route_idx = int(x[0])
         route = route_options[route_idx]
-        evaluation = evaluate_route(G, route, cargo_weight, perishability)
+        evaluation = evaluate_route(G, route, cargo_weight, goods_type)
         optimized_routes.append((route, evaluation))
     
     return optimized_routes
@@ -620,13 +644,15 @@ def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_w
 # -------------------------------------------------------------------------
 # TABU SEARCH FOR LOCAL REFINEMENT
 # -------------------------------------------------------------------------
-def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, perishability: float, 
-                max_iterations: int = 50, tabu_size: int = 7) -> Tuple[List[str], Dict[str, Any]]:
+def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, goods_type: str, 
+                priority_int: int, max_iterations: int = 50, tabu_size: int = 7) -> Tuple[List[str], Dict[str, Any]]:
     """
-    Apply Tabu Search to refine a route locally
+    Apply Tabu Search to refine a route locally.
+    If priority_int==2 (minimize time), it uses total_time only.
+    Otherwise, it uses a weighted sum (total_cost + total_time*1000) for selection.
     """
     current_route = initial_route
-    current_eval = evaluate_route(G, current_route, cargo_weight, perishability)
+    current_eval = evaluate_route(G, current_route, cargo_weight, goods_type)
     
     best_route = current_route
     best_eval = current_eval
@@ -634,60 +660,56 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, pe
     tabu_list = []  # List of recently visited solutions
     
     for i in range(max_iterations):
-        # Generate neighborhood of the current solution
         neighbors = []
         
         # Simple neighborhood: try replacing transit hubs
-        if len(current_route) >= 4:  # We need at least one intermediate node to replace
+        if len(current_route) >= 4:  # at least one intermediate node
             for pos in range(1, len(current_route) - 1):
-                # Find potential replacement nodes
-                node_type = G.nodes[current_route[pos]]['type'] if 'type' in G.nodes[current_route[pos]] else None
-                
+                node_type = G.nodes[current_route[pos]].get('type', None)
                 if node_type in ['airport', 'port']:
-                    # Find other nodes of same type
-                    replacements = [n for n, data in G.nodes(data=True) 
-                                  if 'type' in data and data['type'] == node_type and n != current_route[pos]]
-                    
-                    # Try each replacement
+                    # Find potential replacement nodes of the same type (excluding the current)
+                    replacements = [n for n, data in G.nodes(data=True)
+                                    if data.get('type') == node_type and n != current_route[pos]]
                     for replacement in replacements:
-                        # Check if this creates a valid route
-                        if (G.has_edge(current_route[pos-1], replacement) and 
-                            G.has_edge(replacement, current_route[pos+1])):
-                            
-                            new_route = current_route.copy()
-                            new_route[pos] = replacement
-                            
-                            # Check if not in tabu list
+                        # Check if replacing creates valid edges
+                        if G.has_edge(current_route[pos-1], replacement) and G.has_edge(replacement, current_route[pos+1]):
+                            new_route = current_route[:pos] + [replacement] + current_route[pos+1:]
                             if tuple(new_route) not in tabu_list:
-                                new_eval = evaluate_route(G, new_route, cargo_weight, perishability)
+                                new_eval = evaluate_route(G, new_route, cargo_weight, goods_type)
                                 if new_eval['valid']:
                                     neighbors.append((new_route, new_eval))
         
         if not neighbors:
-            # No valid neighbors found
-            break
+            break  # No valid neighbors found
         
-        # Sort neighbors by a weighted sum of objectives
-        # Weight is determined by the user's priority (simplification)
-        neighbors.sort(key=lambda x: x[1]['total_cost'] + x[1]['total_time'] * 1000)
+        # Select neighbor according to the chosen priority
+        if priority_int == 2:
+            # For time minimization, sort by total_time only
+            neighbors.sort(key=lambda x: x[1]['total_time'])
+        else:
+            # For cost or balanced, use weighted sum (using time*1000 as before)
+            neighbors.sort(key=lambda x: x[1]['total_cost'] + x[1]['total_time'] * 1000)
         
-        # Select the best neighbor
         best_neighbor, best_neighbor_eval = neighbors[0]
         
         # Update current solution
         current_route = best_neighbor
         current_eval = best_neighbor_eval
         
-        # Add to tabu list
+        # Add current solution to tabu list
         tabu_list.append(tuple(current_route))
         if len(tabu_list) > tabu_size:
-            tabu_list.pop(0)  # Remove oldest entry
+            tabu_list.pop(0)
         
-        # Update best solution if needed
-        if (current_eval['total_cost'] + current_eval['total_time'] * 1000) < (
-            best_eval['total_cost'] + best_eval['total_time'] * 1000):
-            best_route = current_route
-            best_eval = current_eval
+        # Update best solution (using same objective as neighbor-sorting)
+        if priority_int == 2:
+            if current_eval['total_time'] < best_eval['total_time']:
+                best_route = current_route
+                best_eval = current_eval
+        else:
+            if (current_eval['total_cost'] + current_eval['total_time'] * 1000) < (best_eval['total_cost'] + best_eval['total_time'] * 1000):
+                best_route = current_route
+                best_eval = current_eval
     
     return best_route, best_eval
 
@@ -695,151 +717,34 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, pe
 # ROUTE RANKING AND VISUALIZATION
 # -------------------------------------------------------------------------
 def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priority: int) -> List[Tuple[List[str], Dict[str, Any]]]:
-    """
-    Rank routes based on user priority
-    1: Cost priority
-    2: Time priority
-    3: Balanced (weighted cost and time)
-    """
+    if not optimized_routes:
+        return []
+
     if priority == 1:  # Minimize cost
-        return sorted(optimized_routes, key=lambda x: x[1]['total_cost'])
+        print("Ranking strictly by total cost, ascending.")
+        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_cost'])
+        return sorted_routes[:3]
+
     elif priority == 2:  # Minimize time
-        return sorted(optimized_routes, key=lambda x: x[1]['total_time'])
-    else:  # Balanced approach
-        # Normalize and combine cost and time with equal weights
-        max_cost = max(r[1]['total_cost'] for r in optimized_routes) if optimized_routes else 1
-        max_time = max(r[1]['total_time'] for r in optimized_routes) if optimized_routes else 1
-        
-        def balanced_score(route_eval):
-            norm_cost = route_eval[1]['total_cost'] / max_cost
-            norm_time = route_eval[1]['total_time'] / max_time
+        print("Ranking strictly by total time, ascending.")
+        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_time'])
+        return sorted_routes[:3]
+
+    else:  # Balanced: normalized cost & time
+        print("Ranking by simple normalized sum of cost & time.")
+        min_cost = min(r[1]['total_cost'] for r in optimized_routes)
+        max_cost = max(r[1]['total_cost'] for r in optimized_routes)
+        min_time = min(r[1]['total_time'] for r in optimized_routes)
+        max_time = max(r[1]['total_time'] for r in optimized_routes)
+
+        def balanced_score(eval_data):
+            norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
+            norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
             return 0.5 * norm_cost + 0.5 * norm_time
-            
-        return sorted(optimized_routes, key=balanced_score)
 
-def visualize_route(G: nx.DiGraph, route: List[str], evaluation: Dict[str, Any]) -> None:
-    """
-    Create an animated visualization of the route using folium
-    """
-    # Get coordinates for first node
-    start_coords_str = G.nodes[route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-    
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Add markers for each node
-    for node in route:
-        coords_str = G.nodes[node]['coords'].split(',')
-        lon, lat = float(coords_str[0]), float(coords_str[1])
-        
-        node_type = G.nodes[node].get('type', 'unknown')
-        
-        if node_type == 'airport':
-            icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-        elif node_type == 'port':
-            icon = folium.Icon(color='green', icon='ship', prefix='fa')
-        elif node_type in ['source', 'city']:
-            icon = folium.Icon(color='red', icon='flag', prefix='fa')
-        elif node_type == 'destination':
-            icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-        else:
-            icon = folium.Icon(color='gray')
-        
-        folium.Marker([lat, lon], tooltip=node, icon=icon).add_to(m)
-    
-    # Add animated paths for each segment
-    for i in range(len(route) - 1):
-        segment = next((s for s in evaluation['segments'] if s['start'] == route[i] and s['end'] == route[i+1]), None)
-        
-        if segment:
-            start_coords_str = G.nodes[route[i]]['coords'].split(',')
-            start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-            
-            end_coords_str = G.nodes[route[i+1]]['coords'].split(',')
-            end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-            
-            mode = segment['mode']
-            
-            # Create different animations based on transport mode
-            if mode == 'road' and 'geometry' in segment:
-                # Use actual road geometry
-                points = polyline.decode(segment['geometry'])
-                
-                # Animate the road path
-                AntPath(
-                    locations=points,
-                    color='blue',
-                    dash_array=[10, 20],
-                    delay=1000,
-                    weight=3,
-                    tooltip=f"Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add vehicle animation using TimestampedGeoJson
-                features = create_vehicle_animation(points, "truck", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",  # One day per frame
-                    duration="P1D",
-                    transition_time=1000,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'air':
-                # Create curved path for flights
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the flight path
-                AntPath(
-                    locations=path_points,
-                    color='red',
-                    weight=3,
-                    dash_array=[2, 10],
-                    delay=200,
-                    tooltip=f"Flight: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add plane animation
-                features = create_vehicle_animation(path_points, "plane", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=800,
-                    auto_play=True
-                ).add_to(m)
-                
-            elif mode == 'sea':
-                # Create curved path for shipping
-                path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                
-                # Animate the shipping path
-                AntPath(
-                    locations=path_points,
-                    color='darkgreen',
-                    weight=4,
-                    dash_array=[5, 15],
-                    delay=500,
-                    tooltip=f"Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                ).add_to(m)
-                
-                # Add ship animation
-                features = create_vehicle_animation(path_points, "ship", segment)
-                TimestampedGeoJson(
-                    features,
-                    period="P1D",
-                    duration="P1D",
-                    transition_time=1500,
-                    auto_play=True
-                ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "route_map.html"
-    m.save(output_file)
-    print(f"\nMap saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
+        return sorted(optimized_routes, key=lambda x: balanced_score(x[1]))
 
+    
 def create_vehicle_animation(points, vehicle_type, segment):
     """Create GeoJSON features for vehicle animation"""
     features = []
@@ -922,7 +827,7 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
     print(f"Total Time: {evaluation['total_time']:.2f} hours")
     if 'total_distance' in evaluation:
         print(f"Total Distance: {evaluation['total_distance']:.2f} km (road segments only)")
-    print(f"Perishability Score: {evaluation['perishability_score']:.2f}")
+    print(f"Cargo Type: {evaluation['goods_type'].title()}")
     print("-" * 60)
     print("Segment Details:")
     
@@ -930,10 +835,11 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
         print(f"  {segment['start']} -> {segment['end']} ({segment['mode']})")
         print(f"    Distance: {segment['distance_km']} km")
         print(f"    Time: {segment['time_hr']:.2f} hours")
-        print(f"    Base Cost: ₹{segment['cost']:.2f}")
-        if segment['perishability_impact'] > 0:
-            print(f"    Perishability Impact: ₹{segment['perishability_impact']:.2f}")
-        if segment['customs_cost'] > 0:
+        print(f"    Base Cost: ₹{segment['base_cost']:.2f}")
+        print(f"    {evaluation['goods_type'].title()} Multiplier: {segment['goods_type_multiplier']:.2f}x")
+        if segment.get('goods_impact', 0) > 0:
+            print(f"    Goods-Specific Impact: ₹{segment['goods_impact']:.2f}")
+        if segment.get('customs_cost', 0) > 0:
             print(f"    Customs/Tariff: ₹{segment['customs_cost']:.2f}")
         print(f"    Total Segment Cost: ₹{segment['total_segment_cost']:.2f}")
         print()
@@ -961,151 +867,8 @@ def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, An
     
     print("\n" + "=" * 80)
 
-def visualize_top_routes(G: nx.DiGraph, ranked_routes: List[Tuple[List[str], Dict[str, Any]]], 
-                         num_routes: int = 3) -> None:
-    """
-    Create a visualization of multiple top routes on a single map
-    """
-    if not ranked_routes:
-        print("No routes to visualize.")
-        return
-        
-    # Get coordinates for first node of the first route
-    first_route = ranked_routes[0][0]
-    start_coords_str = G.nodes[first_route[0]]['coords'].split(',')
-    start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
     
-    # Create map centered on the source location
-    m = folium.Map(location=[start_lat, start_lon], zoom_start=4)
-    
-    # Color scheme for different routes
-    route_colors = ['blue', 'green', 'purple', 'orange', 'darkred']
-    
-    # Add top routes to the map
-    for i, (route, evaluation) in enumerate(ranked_routes[:num_routes]):
-        route_color = route_colors[i % len(route_colors)]
-        
-        # Add all nodes as markers
-        for node in route:
-            coords_str = G.nodes[node]['coords'].split(',')
-            lon, lat = float(coords_str[0]), float(coords_str[1])
-            
-            node_type = G.nodes[node].get('type', 'unknown')
-            
-            if node_type == 'airport':
-                icon = folium.Icon(color='blue', icon='plane', prefix='fa')
-            elif node_type == 'port':
-                icon = folium.Icon(color='green', icon='ship', prefix='fa')
-            elif node_type in ['source', 'city']:
-                icon = folium.Icon(color='red', icon='flag', prefix='fa')
-            elif node_type == 'destination':
-                icon = folium.Icon(color='darkred', icon='flag-checkered', prefix='fa')
-            else:
-                icon = folium.Icon(color='gray')
-            
-            # Add tooltip with node info
-            tooltip = f"{node} (Route {i+1})"
-            folium.Marker([lat, lon], tooltip=tooltip, icon=icon).add_to(m)
-        
-        # Add segments
-        for j in range(len(route) - 1):
-            segment = next((s for s in evaluation['segments'] if s['start'] == route[j] and s['end'] == route[j+1]), None)
-            
-            if segment:
-                start_coords_str = G.nodes[route[j]]['coords'].split(',')
-                start_lon, start_lat = float(start_coords_str[0]), float(start_coords_str[1])
-                
-                end_coords_str = G.nodes[route[j+1]]['coords'].split(',')
-                end_lon, end_lat = float(end_coords_str[0]), float(end_coords_str[1])
-                
-                mode = segment['mode']
-                
-                # Create paths based on transport mode
-                if mode == 'road' and 'geometry' in segment:
-                    # Use actual road geometry for roads
-                    points = polyline.decode(segment['geometry'])
-                    
-                    folium.PolyLine(
-                        locations=points,
-                        color=route_color,
-                        weight=4,
-                        tooltip=f"Route {i+1} - Road: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add vehicle icon at middle of segment
-                    mid_idx = len(points) // 2
-                    if mid_idx < len(points):
-                        folium.Marker(
-                            points[mid_idx],
-                            tooltip=f"Route {i+1} - Truck",
-                            icon=folium.Icon(icon='truck', prefix='fa', color=route_color)
-                        ).add_to(m)
-                    
-                elif mode == 'air':
-                    # Create curved path for flights
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=4,
-                        dash_array='5, 10',
-                        tooltip=f"Route {i+1} - Air: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add plane icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx],
-                        tooltip=f"Route {i+1} - Flight",
-                        icon=folium.Icon(icon='plane', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-                elif mode == 'sea':
-                    # Create curved path for shipping
-                    path_points = create_arc_path([start_lat, start_lon], [end_lat, end_lon], 20)
-                    
-                    folium.PolyLine(
-                        locations=path_points,
-                        color=route_color,
-                        weight=5,
-                        dash_array='10, 15',
-                        tooltip=f"Route {i+1} - Sea: {segment['time_hr']:.1f} hrs, ₹{segment['total_segment_cost']:.2f}"
-                    ).add_to(m)
-                    
-                    # Add ship icon
-                    mid_idx = len(path_points) // 2
-                    folium.Marker(
-                        path_points[mid_idx], 
-                        tooltip=f"Route {i+1} - Ship",
-                        icon=folium.Icon(icon='ship', prefix='fa', color=route_color)
-                    ).add_to(m)
-                    
-        # Add route summary on the map
-        folium.map.Marker(
-            [start_lat + i*2, start_lon - 15],
-            icon=folium.DivIcon(
-                icon_size=(250, 36),
-                icon_anchor=(0, 0),
-                html=f"""
-                <div style="font-size: 12pt; color: {route_color}; background-color: white; 
-                        border: 2px solid {route_color}; border-radius: 3px; padding: 3px">
-                    <b>Route {i+1}:</b> ₹{evaluation['total_cost']:.2f}, {evaluation['total_time']:.1f} hrs
-                </div>
-                """
-            )
-        ).add_to(m)
-    
-    # Save the map and open in browser
-    output_file = "top_routes_map.html"
-    m.save(output_file)
-    print(f"\nMap with top {min(num_routes, len(ranked_routes))} routes saved to {output_file}")
-    webbrowser.open('file://' + os.path.abspath(output_file))
-
-# -------------------------------------------------------------------------
-# MAIN FUNCTION
-# -------------------------------------------------------------------------
-def main():
+def get_routing(source: str, destination: str, priority_choice: str, goods_type_choice: str, cargo_weight: float) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
     Main function to run the multi-modal logistics route optimizer
     """
@@ -1116,30 +879,31 @@ def main():
     print("Multi-Modal Logistics Route Optimizer")
     print("====================================\n")
     
-    # Get user inputs
-    print("Please enter the following information:")
-    source = input("Source location (city name or coordinates): ")
-    destination = input("Destination location (city name or coordinates): ")
-    
-    # Priority selection
-    print("\nOptimization priority:")
-    print("1. Minimize Cost")
-    print("2. Minimize Time")
-    print("3. Balanced (weighted combination)")
-    priority_choice = input("Enter your choice (1-3): ")
-    
+    priority_int = 3  # Default to balanced
     if priority_choice == "1":
         priority = "minimize_cost"
+        priority_int = 1
     elif priority_choice == "2":
         priority = "minimize_time"
+        priority_int = 2
     else:
         priority = "weighted"
+        priority_int = 3
     
-    # Get cargo details
-    cargo_weight = float(input("\nCargo weight (kg): "))
-    perishability = float(input("Cargo perishability (0-10, higher means more time-sensitive): "))
+    goods_type_map = {
+        "1": "standard",
+        "2": "perishable",
+        "3": "hazardous", 
+        "4": "fragile",
+        "5": "oversized",
+        "6": "high_value"
+    }
+     
+    goods_type = goods_type_map.get(goods_type_choice, "standard")
+    print(f"Selected cargo type: {goods_type.title()} (cost multiplier: {GOODS_TYPE_MULTIPLIER[goods_type]}x)")
+
     
-    # Load data from CSV files
+     # Load data from CSV files
     print("\nLoading transportation data...")
     flights_csv = "cargo_flights (1).csv"
     shipping_csv = "cargo_shipping.csv"
@@ -1173,9 +937,42 @@ def main():
     
     print(f"Found {len(routes)} candidate routes")
     
+    # Pre-filter extreme outliers for all priority types
+    print("Pre-filtering routes before optimization...")
+    route_evaluations = []
+    for route in routes:
+        evaluation = evaluate_route(G, route, cargo_weight, goods_type)
+        if evaluation['valid']:
+            route_evaluations.append((route, evaluation))
+    
+    # Define all_evaluated_routes as a copy of the candidate evaluations—this fixes the missing variable error.
+    all_evaluated_routes = route_evaluations.copy()
+    
+    if route_evaluations:
+        min_cost = min(route_evaluations, key=lambda x: x[1]['total_cost'])[1]['total_cost']
+        min_time = min(route_evaluations, key=lambda x: x[1]['total_time'])[1]['total_time']
+    
+        filtered_routes = []
+    
+        if priority == "minimize_cost":
+            for route, eval in route_evaluations:
+                if eval['total_cost'] <= min_cost * 2:
+                    filtered_routes.append(route)
+        elif priority == "minimize_time":
+            for route, eval in route_evaluations:
+                if eval['total_time'] <= min_time * 3:
+                    filtered_routes.append(route)
+        else:  # Balanced
+            for route, eval in route_evaluations:
+                if eval['total_cost'] <= min_cost * 5 and eval['total_time'] <= min_time * 10:
+                    filtered_routes.append(route)
+    
+        print(f"Pre-filtered from {len(routes)} to {len(filtered_routes)} routes")
+        routes = filtered_routes
+    
     # Apply NSGA-III optimization
     print("\nApplying multi-objective optimization (NSGA-III)...")
-    optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, perishability)
+    optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, goods_type)
     
     if not optimized_routes:
         print("No feasible routes found after optimization.")
@@ -1187,21 +984,14 @@ def main():
     print("\nApplying local refinement (Tabu Search)...")
     refined_routes = []
     for route, evaluation in optimized_routes:
-        refined_route, refined_eval = tabu_search(G, route, cargo_weight, perishability)
+        refined_route, refined_eval = tabu_search(G, route, cargo_weight, goods_type, priority_int)
         refined_routes.append((refined_route, refined_eval))
     
     print("Local refinement complete")
     
-    # Rank routes based on user priority
+    # Rank routes based on user priority using refined_routes
     print(f"\nRanking routes based on priority: {priority}")
-    ranked_routes = rank_routes(refined_routes, priority)
-    
-    # Apply multi-objective optimization
-    optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, perishability)
-    
-    # Rank routes based on user priority
-    priority_int = 1 if priority == "minimize_cost" else (2 if priority == "minimize_time" else 3)
-    ranked_routes = rank_routes(optimized_routes, priority_int)
+    ranked_routes = rank_routes(refined_routes, priority_int)
     
     # Remove duplicate routes (same nodes in same order)
     unique_ranked_routes = []
@@ -1212,27 +1002,24 @@ def main():
             seen_routes.add(route_str)
             unique_ranked_routes.append((route, evaluation))
     
-    # Ensure we have at least 3 routes if possible
-    if len(unique_ranked_routes) < len(routes):
-        # Add additional routes that weren't in the Pareto front
-        for route in routes:
+    # If we have fewer than 3 refined routes, supplement from candidate routes.
+    if priority_int == 2 and len(unique_ranked_routes) < 3:
+        sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_time'])
+        for route, evaluation in sorted_candidates:
             route_str = "→".join(route)
-            if route_str not in seen_routes and len(unique_ranked_routes) < min(3, len(routes)):
-                evaluation = evaluate_route(G, route, cargo_weight, perishability)
-                if evaluation['valid']:
-                    unique_ranked_routes.append((route, evaluation))
-                    seen_routes.add(route_str)
-    
-    # Print all routes in text format
-    all_evaluated_routes = []
-    for route in routes:
-        evaluation = evaluate_route(G, route, cargo_weight, perishability)
-        if evaluation['valid']:
-            all_evaluated_routes.append((route, evaluation))
+            if route_str not in seen_routes and len(unique_ranked_routes) < 3:
+                unique_ranked_routes.append((route, evaluation))
+                seen_routes.add(route_str)
+    elif priority_int == 1 and len(unique_ranked_routes) < 3:
+        sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_cost'])
+        for route, evaluation in sorted_candidates:
+            route_str = "→".join(route)
+            if route_str not in seen_routes and len(unique_ranked_routes) < 3:
+                unique_ranked_routes.append((route, evaluation))
+                seen_routes.add(route_str)
     
     print_all_routes(all_evaluated_routes)
     
-    # Display top routes (up to 3)
     max_display = min(3, len(unique_ranked_routes))
     print(f"\nTop {max_display} recommended routes:")
     
@@ -1240,26 +1027,6 @@ def main():
         print(f"\nROUTE OPTION {i+1}:")
         print_route_details(route, evaluation)
     
-    # Visualize the top 3 routes
-    if unique_ranked_routes:
-        print("\nGenerating visualization for top routes...")
-        visualize_top_routes(G, unique_ranked_routes, num_routes=max_display)
-        
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
-if __name__ == "__main__":
-    # Make sure all required libraries are imported
-    try:
-        import requests
-        import pandas as pd
-        import networkx as nx
-        import numpy as np
-        import folium
-    except ImportError as e:
-        print(f"Error: Missing required library - {e}")
-        print("Please install all required libraries with:")
-        print("pip install requests pandas networkx matplotlib numpy folium pymoo")
-        exit(1)
-        
-    # Run the main function
-    main()
+    return unique_ranked_routes

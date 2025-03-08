@@ -1,4 +1,4 @@
-Source Port,Destination Port,Carrier Name,Distance (km),Estimated Time (days),Estimated Cost (INR/kg)
+departure_port,arrival_port,Carrier Name,Distance (km),travel_time,cost
 Jawaharlal Nehru Port,Port of Los Angeles,Maersk Line,14000,28,7.13
 Mundra Port,Port of Long Beach,MSC,14100,28,7.13
 Chennai Port,Port of New York/New Jersey,CMA CGM,13800,27,7.13

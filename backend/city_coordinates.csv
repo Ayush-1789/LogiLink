@@ -1,0 +1,162 @@
+city,country,type,code,lat,lon
+Mumbai,India,city,,19.076,72.8777
+Delhi,India,city,,28.7041,77.1025
+Kolkata,India,city,,22.5726,88.3639
+Chennai,India,city,,13.0827,80.2707
+Bangalore,India,city,,12.9716,77.5946
+Hyderabad,India,city,,17.385,78.4867
+Ahmedabad,India,city,,23.0225,72.5714
+Delhi,India,airport,DEL,28.5562,77.1003
+Mumbai,India,airport,BOM,19.0896,72.8747
+Chennai,India,airport,MAA,12.9941,80.1631
+Bangalore,India,airport,BLR,13.1989,77.7064
+Hyderabad,India,airport,HYD,17.2403,78.4303
+Kolkata,India,airport,CCU,22.6547,88.4467
+Kochi,India,airport,COK,10.1517,76.3232
+Jawaharlal Nehru Port,India,port,INMUN,18.949,72.9581
+Mundra Port,India,port,INMUN2,22.8342,69.7026
+Chennai Port,India,port,INMAA,13.1009,80.2975
+Kolkata Port,India,port,INCCU,22.5448,88.3075
+Kandla Port,India,port,INKAN,23.0347,70.2168
+Visakhapatnam Port,India,port,INVTZ,17.6863,83.2836
+New York,USA,city,,40.7128,-74.006
+Los Angeles,USA,city,,34.0522,-118.2437
+Atlanta,USA,airport,ATL,33.6407,-84.4277
+Los Angeles,USA,airport,LAX,33.9416,-118.4085
+Chicago,USA,airport,ORD,41.9742,-87.9073
+Dallas,USA,airport,DFW,32.8998,-97.0403
+New York,USA,airport,JFK,40.6413,-73.7781
+Miami,USA,airport,MIA,25.7932,-80.287
+San Francisco,USA,airport,SFO,37.6213,-122.379
+Port of Los Angeles,USA,port,USLAX,33.7308,-118.2705
+Port of Long Beach,USA,port,USLGB,33.7542,-118.2023
+Port of New York/New Jersey,USA,port,USNYC,40.67,-74.06
+Port of Savannah,USA,port,USSAV,32.125,-81.127
+Port of Houston,USA,port,USHOU,29.737,-95.261
+Port of Seattle-Tacoma,USA,port,USSEA,47.6062,-122.3321
+Dubai,UAE,city,,25.2048,55.2708
+Dubai,UAE,airport,DXB,25.2532,55.3644
+Abu Dhabi,UAE,airport,AUH,24.433,54.6473
+Sharjah,UAE,airport,SHJ,25.3284,55.5172
+Port of Jebel Ali,UAE,port,AEJEA,24.9857,55.0439
+Port Rashid,UAE,port,AEPRA,25.2836,55.2783
+Port Khalifa,UAE,port,AEKHL,24.8075,54.6375
+Port of Fujairah,UAE,port,AEFUJ,25.1757,56.3347
+Amsterdam,Netherlands,airport,AMS,52.3105,4.7634
+Rotterdam,Netherlands,airport,RTM,51.9496,4.4377
+Eindhoven,Netherlands,airport,EIN,51.45,5.3765
+Port of Rotterdam,Netherlands,port,NLRTM,51.9,4.4167
+Port of Amsterdam,Netherlands,port,NLAMS,52.3702,4.8952
+Port of Moerdijk,Netherlands,port,NLMOE,51.6833,4.5833
+Indira Gandhi International Airport,India,airport,DEL,28.5562,77.1
+Chhatrapati Shivaji Maharaj International Airport,India,airport,BOM,19.0896,72.8656
+Kempegowda International Airport,India,airport,BLR,13.1979,77.7063
+Chennai International Airport,India,airport,MAA,12.9941,80.1709
+Netaji Subhas Chandra Bose International Airport,India,airport,CCU,22.6547,88.4467
+Rajiv Gandhi International Airport,India,airport,HYD,17.2313,78.4294
+Pune Airport,India,airport,PNQ,18.5822,73.9197
+Goa International Airport,India,airport,GOI,15.38,73.8312
+Sardar Vallabhbhai Patel International Airport,India,airport,AMD,23.0772,72.6347
+Cochin International Airport,India,airport,COK,10.152,76.4019
+Trivandrum International Airport,India,airport,TRV,8.4821,76.9207
+Chandigarh Airport,India,airport,IXC,30.6735,76.7885
+Vijayawada International Airport,India,airport,VGA,16.5304,80.7968
+Biju Patnaik International Airport,India,airport,BBI,20.2444,85.8178
+Bagdogra Airport,India,airport,IXB,26.6812,88.3286
+Memphis International Airport,USA,airport,MEM,35.0425,-89.9767
+Louisville International Airport,USA,airport,SDF,38.1744,-85.736
+Los Angeles International Airport,USA,airport,LAX,33.9416,-118.4085
+O'Hare International Airport,USA,airport,ORD,41.9742,-87.9073
+Miami International Airport,USA,airport,MIA,25.7959,-80.287
+John F. Kennedy International Airport,USA,airport,JFK,40.6413,-73.7781
+Dallas/Fort Worth International Airport,USA,airport,DFW,32.8998,-97.0403
+Hartsfield-Jackson Atlanta International Airport,USA,airport,ATL,33.6407,-84.4277
+Seattle-Tacoma International Airport,USA,airport,SEA,47.4502,-122.3088
+Denver International Airport,USA,airport,DEN,39.8561,-104.6737
+George Bush Intercontinental Airport,USA,airport,IAH,29.9844,-95.3414
+Phoenix Sky Harbor International Airport,USA,airport,PHX,33.4343,-112.0116
+Logan International Airport,USA,airport,BOS,42.3656,-71.0096
+Harry Reid International Airport,USA,airport,LAS,36.083,-115.1516
+Orlando International Airport,USA,airport,MCO,28.4312,-81.3081
+Dubai International Airport,UAE,airport,DXB,25.2532,55.3657
+Abu Dhabi International Airport,UAE,airport,AUH,24.4329,54.6511
+Sharjah International Airport,UAE,airport,SHJ,25.3286,55.5171
+Al Maktoum International Airport,UAE,airport,DWC,24.8964,55.1614
+Fujairah International Airport,UAE,airport,FJR,25.1122,56.3242
+Ras Al Khaimah International Airport,UAE,airport,RKT,25.6139,55.9388
+Al Bateen Executive Airport,UAE,airport,AZI,24.4283,54.4581
+Heathrow Airport,UK,airport,LHR,51.47,-0.4543
+Gatwick Airport,UK,airport,LGW,51.1537,-0.1821
+East Midlands Airport,UK,airport,EMA,52.8311,-1.3281
+Manchester Airport,UK,airport,MAN,53.365,-2.272
+Birmingham Airport,UK,airport,BHX,52.4539,-1.748
+Stansted Airport,UK,airport,STN,51.885,0.235
+Glasgow Airport,UK,airport,GLA,55.8719,-4.4331
+Luton Airport,UK,airport,LTN,51.8747,-0.3683
+Newcastle International Airport,UK,airport,NCL,55.0375,-1.6917
+Shanghai Pudong International Airport,China,airport,PVG,31.1434,121.8052
+Hong Kong International Airport,China,airport,HKG,22.308,113.9185
+Guangzhou Baiyun International Airport,China,airport,CAN,23.3925,113.2988
+Beijing Capital International Airport,China,airport,PEK,40.0801,116.5846
+Shenzhen Bao'an International Airport,China,airport,SZX,22.6393,113.8107
+Chengdu Shuangliu International Airport,China,airport,CTU,30.5785,103.9471
+Xiamen Gaoqi International Airport,China,airport,XMN,24.5444,118.1278
+Chongqing Jiangbei International Airport,China,airport,CKG,29.7192,106.6417
+Wuhan Tianhe International Airport,China,airport,WUH,30.784,114.2081
+Amsterdam Schiphol Airport,Netherlands,airport,AMS,52.3105,4.7683
+Eindhoven Airport,Netherlands,airport,EIN,51.4501,5.3745
+Rotterdam The Hague Airport,Netherlands,airport,RTM,51.9561,4.4372
+Groningen Airport Eelde,Netherlands,airport,GRQ,53.1197,6.5794
+Maastricht Aachen Airport,Netherlands,airport,MST,50.9117,5.7701
+Luxembourg Airport,Netherlands,airport,LUX,49.6233,6.2044
+Deendayal Port (Kandla),India,port,,23.0333,70.2167
+Mumbai Port,India,port,,18.9633,72.866
+Jawaharlal Nehru Port (Nhava Sheva),India,port,,18.9467,72.947
+Mormugao Port,India,port,,15.405,73.807
+New Mangalore Port,India,port,,12.9176,74.8353
+Cochin Port,India,port,,9.9667,76.2667
+Chennai Port,India,port,,13.0986,80.3
+Visakhapatnam Port,India,port,,17.7033,83.287
+Paradip Port,India,port,,20.2667,86.6833
+Syama Prasad Mookerjee Port (Kolkata),India,port,,22.5461,88.3136
+V.O. Chidambaranar Port (Tuticorin),India,port,,8.7642,78.1348
+Port of Los Angeles,USA,port,,33.7405,-118.2755
+Port of New York and New Jersey,USA,port,,40.6684,-74.0416
+Port of Savannah,USA,port,,32.0809,-81.0912
+Port of Houston,USA,port,,29.7364,-95.073
+Port of Seattle,USA,port,,47.6017,-122.3392
+Port of Oakland,USA,port,,37.795,-122.2908
+Port of Charleston,USA,port,,32.7812,-79.9335
+Port of Miami,USA,port,,25.7781,-80.1794
+Port of Virginia (Norfolk),USA,port,,36.8715,-76.3293
+Port of Baltimore,USA,port,,39.2639,-76.5795
+Port of Jebel Ali,UAE,port,,25.0147,55.0633
+Port Rashid,UAE,port,,25.276,55.2888
+Port Khalid,UAE,port,,25.3575,55.3725
+Port Zayed,UAE,port,,24.525,54.384
+Fujairah Port,UAE,port,,25.1799,56.3566
+Port of Felixstowe,UK,port,,51.9607,1.3111
+Port of Southampton,UK,port,,50.9033,-1.4283
+Port of London,UK,port,,51.5074,-0.1278
+Port of Liverpool,UK,port,,53.45,-3.0333
+Port of Immingham,UK,port,,53.635,-0.196
+Port of Tyne,UK,port,,54.97,-1.44
+Port of Bristol,UK,port,,51.5,-2.7
+Port of Dover,UK,port,,51.1294,1.3081
+Port of Hull,UK,port,,53.741,-0.3356
+Port of Grangemouth,UK,port,,56.02,-3.72
+Port of Shanghai,China,port,,31.2304,121.4912
+Port of Shenzhen,China,port,,22.5431,114.0579
+Port of Ningbo-Zhoushan,China,port,,29.8789,121.5495
+Port of Guangzhou,China,port,,23.1291,113.2644
+Port of Qingdao,China,port,,36.0671,120.3826
+Port of Tianjin,China,port,,39.3434,117.3616
+Port of Dalian,China,port,,38.914,121.6147
+Port of Xiamen,China,port,,24.4798,118.0894
+Port of Hong Kong,China,port,,22.308,114.225
+Port of Lianyungang,China,port,,34.5967,119.222
+Port of Rotterdam,Netherlands,port,,51.9225,4.4792
+Port of Amsterdam,Netherlands,port,,52.3792,4.898
+Port of Groningen (Eemshaven),Netherlands,port,,53.4568,6.8312
+Port of Vlissingen,Netherlands,port,,51.4425,3.5736
+Port of Den Helder,Netherlands,port,,52.9563,4.7593
