@@ -21,11 +21,13 @@ export default function Results() {
     );
 
     setAllRouteOptions(routes);
+
+    setLoading(false);
   };
 
   useEffect(() => {
     onLoad();
-  }, [shipmentDetails]);
+  }, []);
 
   // Filter routes based on priority selected in the Home page
   const priorityFilteredRoutes = React.useMemo(() => {
