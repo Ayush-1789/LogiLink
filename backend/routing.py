@@ -1093,6 +1093,14 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
         route_str = "→".join(route)
         if route_str not in seen_routes:
             seen_routes.add(route_str)
+            evaluation["modes"] = []
+            for j in range(len(route) - 1):
+                segment = next((s for s in evaluation['segments'] if s['start'] == route[j] and s['end'] == route[j + 1]), None)
+
+                if segment:
+                    if segment["mode"] not in evaluation["modes"]:
+                        evaluation["modes"].append(segment["mode"])
+
             unique_ranked_routes.append((route, evaluation))
     
     # If we have fewer than 3 refined routes, supplement from candidate routes.

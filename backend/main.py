@@ -38,9 +38,11 @@ class Data(BaseModel):
     total_cost: float
     total_time: float
     total_distance: float
+    total_emissions: float
     goods_type: str
     goods_type_score: int
     segments: list[Segment]
+    modes: list[str]
 
 
 class Route(BaseModel):

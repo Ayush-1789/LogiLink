@@ -16,7 +16,7 @@ enum GoodsType {
   HIGH_VALUE = "6",
 }
 
-type Segment = {
+export type Segment = {
   start: string;
   end: string;
   mode: string;
@@ -32,17 +32,19 @@ type Segment = {
   coordinates: [number, number][];
 };
 
-type Data = {
+export type Data = {
   valid: boolean;
   total_cost: number;
   total_time: number;
   total_distance: number;
+  total_emissions: number;
   goods_type: string;
   goods_type_score: number;
   segments: Segment[];
+  modes: string[];
 };
 
-type Route = {
+export type Route = {
   overview: string[];
   data: Data;
 };

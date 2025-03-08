@@ -60,7 +60,7 @@ export default function Home() {
             "#FF5722",
             "#F44336",
             "#E91E63",
-            "#D32F2F"  // Dark Red
+            "#D32F2F", // Dark Red
           ];
           return colors[level - 1] || colors[4]; // Default to middle color if invalid
         };
@@ -68,16 +68,21 @@ export default function Home() {
         // Add this for smooth transition on slider change
         const handlePerishableChange = (e) => {
           formikProps.handleChange(e);
-          
+
           // Add animation pulse effect when slider value changes
-          const valueDisplay = document.querySelector('.perishable-value');
+          const valueDisplay = document.querySelector(".perishable-value");
           if (valueDisplay) {
-            valueDisplay.classList.add('pulse-animation');
-            setTimeout(() => valueDisplay.classList.remove('pulse-animation'), 300);
+            valueDisplay.classList.add("pulse-animation");
+            setTimeout(
+              () => valueDisplay.classList.remove("pulse-animation"),
+              300,
+            );
           }
         };
 
-        const perishableColor = getPerishableColor(formikProps.values.perishableLevel);
+        const perishableColor = getPerishableColor(
+          formikProps.values.perishableLevel,
+        );
 
         return (
           <div className="form-container">
@@ -161,12 +166,17 @@ export default function Home() {
                     <div className="form-row">
                       <div className="form-field full-width perishable-slider-container">
                         <div className="perishable-header">
-                          <label htmlFor="perishableLevel">Perishability Level</label>
-                          <span className="perishable-value" style={{ backgroundColor: perishableColor }}>
+                          <label htmlFor="perishableLevel">
+                            Perishability Level
+                          </label>
+                          <span
+                            className="perishable-value"
+                            style={{ backgroundColor: perishableColor }}
+                          >
                             {formikProps.values.perishableLevel}
                           </span>
                         </div>
-                        
+
                         <div className="slider-container">
                           <input
                             type="range"
@@ -178,22 +188,27 @@ export default function Home() {
                             onChange={handlePerishableChange}
                             className="slider-input"
                             style={{
-                              background: `linear-gradient(to right, #4CAF50, ${perishableColor}, #D32F2F)`
+                              background: `linear-gradient(to right, #4CAF50, ${perishableColor}, #D32F2F)`,
                             }}
                           />
                           <div className="slider-markers">
-                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(num => (
-                              <span 
-                                key={num} 
-                                className={`slider-marker ${num === formikProps.values.perishableLevel ? 'active' : ''}`}
-                                onClick={() => formikProps.setFieldValue('perishableLevel', num)}
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                              <span
+                                key={num}
+                                className={`slider-marker ${num === formikProps.values.perishableLevel ? "active" : ""}`}
+                                onClick={() =>
+                                  formikProps.setFieldValue(
+                                    "perishableLevel",
+                                    num,
+                                  )
+                                }
                               >
                                 {num}
                               </span>
                             ))}
                           </div>
                         </div>
-                        
+
                         <div className="slider-labels">
                           <span>Less perishable</span>
                           <span>Highly perishable</span>
@@ -229,7 +244,11 @@ export default function Home() {
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="primary-button">
+                <button
+                  type="submit"
+                  className="primary-button"
+                  onClick={() => console.log(formikProps.errors)}
+                >
                   Find Optimal Routes
                 </button>
                 <button
