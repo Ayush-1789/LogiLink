@@ -21,6 +21,19 @@ GOODS_TYPE_MULTIPLIER = {
     'standard': 1.0
 }
 
+# Add after the GOODS_TYPE_MULTIPLIER
+CO2_FACTORS = {
+    "air": 0.5015,  # kgCO2 per kg-km (example, varies per aircraft type)
+    "road": 0.1053,  # kgCO2 per km (for medium trucks)
+    "sea": 0.0251   # kgCO2 per kg-km
+}
+
+def calculate_co2(mode, distance_km, weight_kg):
+    if mode in ["road", "air", "sea"]:
+        return (distance_km * weight_kg * CO2_FACTORS[mode])/1000
+    else:
+        raise ValueError("Invalid transport mode")
+
 # Create a cache for geocoded locations
 location_cache = {}
 country_cache = {}
@@ -149,6 +162,37 @@ def load_shipping_data(filepath: str) -> pd.DataFrame:
         print(f"Error: Shipping data file {filepath} not found.")
         return pd.DataFrame()
 
+def load_container_data(filepath: str) -> pd.DataFrame:
+    """Load container specifications from CSV file"""
+    try:
+        df = pd.read_csv(filepath)
+        # Ensure numeric conversion for capacity
+        df["Weight Capacity (kg)"] = pd.to_numeric(df["Weight Capacity (kg)"], errors='coerce')
+        return df
+    except FileNotFoundError:
+        print(f"Warning: Container data file {filepath} not found")
+        return pd.DataFrame()
+
+def get_container_type(mode: str, weight: float, container_df: pd.DataFrame) -> Tuple[str, bool]:
+    """
+    Determine appropriate container type for given mode and weight.
+    Returns (container_type, is_exceeding) tuple.
+    """
+    # Filter containers for specific mode
+    mode_containers = container_df[container_df["Transport Mode"].str.lower() == mode.lower()]
+    if mode_containers.empty:
+        return "Unknown container type", False
+    
+    # Sort by capacity to find smallest suitable container
+    mode_containers = mode_containers.sort_values("Weight Capacity (kg)")
+    
+    suitable = mode_containers[mode_containers["Weight Capacity (kg)"] >= weight]
+    if suitable.empty:
+        max_container = mode_containers.iloc[-1]
+        return f"Exceeds {max_container['Container Type']} capacity ({max_container['Weight Capacity (kg)']} kg)", True
+    
+    return suitable.iloc[0]["Container Type"], False
+
 def load_location_database(filepath="city_coordinates.csv") -> Dict[str, Dict[str, Any]]:
     """
     Load location data from CSV file into a dictionary
@@ -207,46 +251,44 @@ def create_transportation_network(flight_data: pd.DataFrame, shipping_data: pd.D
     """
     Create a directed graph representing the transportation network
     """
-    G = nx.DiGraph()  # Using directed graph since costs/times might differ based on direction
+    G = nx.DiGraph()  # Using directed graph since costs/times might differ by direction
     
     # Add flight edges
     for _, row in flight_data.iterrows():
         dep = row["departure_airport"]
         arr = row["arrival_airport"]
-        cost = row["cost"]  # Cost per kg
+        cost = row["cost"]  # cost per kg
         time = row["travel_time"]  # Hours
         
-        # Extract country information
+        # Try to get flight distance (assumes CSV has a column "distance_km")
+        distance = row["distance_km"] if "distance_km" in row and not pd.isna(row["distance_km"]) else None
+        
         dep_country = get_country_for_node(dep)
         arr_country = get_country_for_node(arr)
         
-        # Add nodes
         if dep not in G:
             G.add_node(dep, type="airport", country=dep_country)
         if arr not in G:
             G.add_node(arr, type="airport", country=arr_country)
         
-        # Add edge
-        G.add_edge(dep, arr, mode="air", cost_per_kg=cost, time_hr=time)
+        # Store distance (if available) in the edge attributes
+        G.add_edge(dep, arr, mode="air", cost_per_kg=cost, time_hr=time, distance_km=distance)
     
-    # Add shipping edges
+    # Add shipping edges (unchanged)
     for _, row in shipping_data.iterrows():
         dep = row["departure_port"]
         arr = row["arrival_port"]
-        cost = row["cost"]  # Cost per kg
+        cost = row["cost"]  # cost per kg
         time = row["travel_time"] * 24.0  # Convert days to hours
         
-        # Extract country information
         dep_country = get_country_for_node(dep)
         arr_country = get_country_for_node(arr)
         
-        # Add nodes
         if dep not in G:
             G.add_node(dep, type="port", country=dep_country)
         if arr not in G:
             G.add_node(arr, type="port", country=arr_country)
         
-        # Add edge
         G.add_edge(dep, arr, mode="sea", cost_per_kg=cost, time_hr=time)
     
     return G
@@ -455,89 +497,87 @@ def find_multimodal_routes(G: nx.DiGraph, source: str, destination: str, max_rou
 
 def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, goods_type: str) -> Dict[str, Any]:
     """
-    Evaluate a route based on total cost, time, and goods type factor
+    Evaluate a route based on total cost, time, and CO2 emissions.
     """
     total_cost = 0
     total_time = 0
     total_distance = 0
+    total_emissions = 0
     segments = []
     
-    # Get multiplier for this goods type
     multiplier = GOODS_TYPE_MULTIPLIER.get(goods_type, 1.0)
     
-    # Go through each segment of the route
     for i in range(len(route) - 1):
         start = route[i]
-        end = route[i + 1]
+        end = route[i+1]
         
         if G.has_edge(start, end):
             edge_data = G[start][end]
             mode = edge_data['mode']
             
-            # Calculate segment metrics
             if mode == 'road':
-                # Base cost calculation for road
                 segment_cost = edge_data['total_cost']
                 segment_time = edge_data['time_hr']
                 segment_distance = edge_data['distance_km']
                 segment_geometry = edge_data.get('geometry', None)
-            elif mode == 'air' or mode == 'sea':
-                # Base cost calculation for air/sea
+                segment_emissions = calculate_co2(mode, segment_distance, cargo_weight)
+            
+            elif mode == 'air':
+                # Use flight distance from CSV if available; otherwise, estimate using time and an average speed (800 km/h)
+                segment_distance = edge_data.get('distance_km', None)
+                if segment_distance is None:
+                    segment_distance = edge_data['time_hr'] * 800
                 segment_cost = edge_data['cost_per_kg'] * cargo_weight
                 segment_time = edge_data['time_hr']
-                segment_distance = 0
                 segment_geometry = None
+                segment_emissions = calculate_co2(mode, segment_distance, cargo_weight)
             
-            # Apply goods type multiplier to the base cost
+            elif mode == 'sea':
+                segment_cost = edge_data['cost_per_kg'] * cargo_weight
+                segment_time = edge_data['time_hr']
+                segment_distance = edge_data.get('distance_km', edge_data['time_hr'] * 40)
+                segment_geometry = None
+                segment_emissions = calculate_co2(mode, segment_distance, cargo_weight)
+            
             adjusted_cost = segment_cost * multiplier
             
-            # Special handling for different goods types
             goods_impact = 0
             if goods_type == 'perishable':
-                # Additional time penalty for perishable items
-                goods_impact = (segment_time ** 1.5) * 0.1 * cargo_weight
+                goods_impact = segment_cost * 0.3
             elif goods_type == 'hazardous':
-                # Extra documentation and handling fee
                 goods_impact = segment_cost * 0.2
             elif goods_type == 'fragile':
-                # Special handling fee
                 goods_impact = segment_cost * 0.1
-            elif goods_type == 'standard' or goods_type == 'raw':
-                # No additional impact for standard goods
-                goods_impact = 0
             
-            # Customs and tariff for international segments
             customs_cost = 0
             if mode in ['air', 'sea']:
-                # Higher customs for specialized goods
-                customs_rate = 0.05  # Base rate
+                customs_rate = 0.05
                 if goods_type in ['hazardous', 'high_value']:
-                    customs_rate = 0.08  # Higher rate
+                    customs_rate = 0.08
                 customs_cost = segment_cost * customs_rate
             
-            # Calculate total segment cost with all factors
             segment_total_cost = adjusted_cost + goods_impact + customs_cost
             
-            # Add to totals
             total_cost += segment_total_cost
             total_time += segment_time
-            total_distance += segment_distance if segment_distance else 0
+            if mode == 'road':
+                total_distance += segment_distance
+            total_emissions += segment_emissions
             
             segment_data = {
                 'start': start,
                 'end': end,
                 'mode': mode,
-                'distance_km': segment_distance if segment_distance else "N/A",
+                'distance_km': segment_distance,
                 'time_hr': segment_time,
                 'base_cost': segment_cost,
                 'goods_type_multiplier': multiplier,
                 'adjusted_cost': adjusted_cost,
                 'goods_impact': goods_impact,
                 'customs_cost': customs_cost,
-                'total_segment_cost': segment_total_cost
+                'total_segment_cost': segment_total_cost,
+                'co2_emissions': segment_emissions
             }
-            
-            # Add geometry data if it exists
             if segment_geometry:
                 segment_data['geometry'] = segment_geometry
                 
@@ -546,14 +586,14 @@ def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, goods_t
             print(f"Error: No edge between {start} and {end}")
             return {'valid': False, 'total_cost': float('inf'), 'total_time': float('inf')}
     
-    # Calculate goods type impact score for optimization
-    goods_type_score = 0 if goods_type == 'standard' or goods_type == 'raw' else multiplier * math.sqrt(total_time) * 10
+    goods_type_score = 0 if goods_type in ['standard', 'raw'] else multiplier * math.sqrt(total_time) * 10
     
     return {
         'valid': True,
         'total_cost': total_cost,
         'total_time': total_time,
         'total_distance': total_distance,
+        'total_emissions': total_emissions,
         'goods_type': goods_type,
         'goods_type_score': goods_type_score,
         'segments': segments
@@ -713,34 +753,45 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, go
 # ROUTE RANKING AND VISUALIZATION
 # -------------------------------------------------------------------------
 def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priority: int) -> List[Tuple[List[str], Dict[str, Any]]]:
+    """
+    Rank routes based on priority. Returns top 3 routes.
+    """
     if not optimized_routes:
         return []
 
-    if priority == 1:  # Minimize cost
-        print("Ranking strictly by total cost, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_cost'])
-        return sorted_routes[:3]
-
+    # Create a copy to avoid modifying original
+    routes_to_rank = optimized_routes.copy()
+    
+    if priority == 4:  # Minimize emissions
+        print("Ranking strictly by CO2 emissions, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_emissions'])
     elif priority == 2:  # Minimize time
         print("Ranking strictly by total time, ascending.")
-        sorted_routes = sorted(optimized_routes, key=lambda x: x[1]['total_time'])
-        return sorted_routes[:3]
-
-    else:  # Balanced: normalized cost & time
-        print("Ranking by simple normalized sum of cost & time.")
-        min_cost = min(r[1]['total_cost'] for r in optimized_routes)
-        max_cost = max(r[1]['total_cost'] for r in optimized_routes)
-        min_time = min(r[1]['total_time'] for r in optimized_routes)
-        max_time = max(r[1]['total_time'] for r in optimized_routes)
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_time'])
+    elif priority == 1:  # Minimize cost
+        print("Ranking strictly by total cost, ascending.")
+        sorted_routes = sorted(routes_to_rank, key=lambda x: x[1]['total_cost'])
+    else:  # Balanced
+        print("Ranking by normalized combination of cost, time, and emissions.")
+        min_cost = min(r[1]['total_cost'] for r in routes_to_rank)
+        max_cost = max(r[1]['total_cost'] for r in routes_to_rank)
+        min_time = min(r[1]['total_time'] for r in routes_to_rank)
+        max_time = max(r[1]['total_time'] for r in routes_to_rank)
+        min_emissions = min(r[1]['total_emissions'] for r in routes_to_rank)
+        max_emissions = max(r[1]['total_emissions'] for r in routes_to_rank)
 
         def balanced_score(eval_data):
             norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
-            return 0.5 * norm_cost + 0.5 * norm_time
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
 
-        return sorted(optimized_routes, key=lambda x: balanced_score(x[1]))
+        sorted_routes = sorted(routes_to_rank, key=lambda x: balanced_score(x[1]))
 
-    
+    # Always return exactly 3 routes if available
+    return sorted_routes[:3]
+
+
 def create_vehicle_animation(points, vehicle_type, segment):
     """Create GeoJSON features for vehicle animation"""
     features = []
@@ -812,7 +863,8 @@ def create_arc_path(start, end, num_points=10):
     
     return points
 
-def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
+def print_route_details(route: List[str], evaluation: Dict[str, Any], 
+                       cargo_weight: float = 0, container_df: pd.DataFrame = None) -> None:
     """
     Print detailed information about a route
     """
@@ -823,14 +875,22 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
     print(f"Total Time: {evaluation['total_time']:.2f} hours")
     if 'total_distance' in evaluation:
         print(f"Total Distance: {evaluation['total_distance']:.2f} km (road segments only)")
+    print(f"Total CO2 Emissions: {evaluation['total_emissions']:.2f} tonnes")
     print(f"Cargo Type: {evaluation['goods_type'].title()}")
     print("-" * 60)
     print("Segment Details:")
     
     for segment in evaluation['segments']:
         print(f"  {segment['start']} -> {segment['end']} ({segment['mode']})")
-        print(f"    Distance: {segment['distance_km']} km")
+        
+        # Handle different data types for distance
+        if isinstance(segment['distance_km'], (int, float)):
+            print(f"    Distance: {segment['distance_km']:.2f} km")
+        else:
+            print(f"    Distance: {segment['distance_km']}")
+            
         print(f"    Time: {segment['time_hr']:.2f} hours")
+        print(f"    CO2 Emissions: {segment['co2_emissions']:.3f} tonnes")
         print(f"    Base Cost: ₹{segment['base_cost']:.2f}")
         print(f"    {evaluation['goods_type'].title()} Multiplier: {segment['goods_type_multiplier']:.2f}x")
         if segment.get('goods_impact', 0) > 0:
@@ -838,8 +898,16 @@ def print_route_details(route: List[str], evaluation: Dict[str, Any]) -> None:
         if segment.get('customs_cost', 0) > 0:
             print(f"    Customs/Tariff: ₹{segment['customs_cost']:.2f}")
         print(f"    Total Segment Cost: ₹{segment['total_segment_cost']:.2f}")
+        
+        # Add container information if available
+        if container_df is not None and segment['mode'] in ['road', 'air', 'sea']:
+            container_type, exceeds = get_container_type(segment['mode'], cargo_weight, container_df)
+            print(f"    Container: {container_type}")
+            if exceeds:
+                print("    WARNING: Cargo weight exceeds container capacity!")
+        
         print()
-    
+
     print("=" * 60)
 
 def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, Any]]]) -> None:
@@ -854,16 +922,17 @@ def print_all_routes(routes_with_evaluations: List[Tuple[List[str], Dict[str, An
         print(f"\nRoute Option {i+1}: {' -> '.join(route)}")
         print(f"  Total Cost: ₹{evaluation['total_cost']:.2f}")
         print(f"  Total Time: {evaluation['total_time']:.2f} hours")
+        print(f"  Total CO2: {evaluation['total_emissions']:.2f} tonnes")
         print(f"  Segments: {len(evaluation['segments'])}")
         
         # Print brief segment info
         for segment in evaluation['segments']:
             print(f"    {segment['start']} -> {segment['end']} ({segment['mode']}): " +
-                  f"₹{segment['total_segment_cost']:.2f}, {segment['time_hr']:.1f} hrs")
+                  f"₹{segment['total_segment_cost']:.2f}, {segment['time_hr']:.1f} hrs, " +
+                  f"{segment['co2_emissions']:.3f} tonnes CO2")
     
     print("\n" + "=" * 80)
 
-    
 def get_routing(source: str, destination: str, priority_choice: str, goods_type_choice: str, cargo_weight: float) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
     Main function to run the multi-modal logistics route optimizer
@@ -876,12 +945,16 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
     print("====================================\n")
     
     priority_int = 3  # Default to balanced
-    if priority_choice == "1":
+
+    if priority_choice == "cost":
         priority = "minimize_cost"
         priority_int = 1
-    elif priority_choice == "2":
+    elif priority_choice == "time":
         priority = "minimize_time"
         priority_int = 2
+    elif priority_choice == "eco":
+        priority = "minimize_emissions"
+        priority_int = 4  # New priority number for emissions
     else:
         priority = "weighted"
         priority_int = 3
@@ -906,6 +979,8 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
     
     flight_data = load_flight_data(flights_csv)
     shipping_data = load_shipping_data(shipping_csv)
+    # Load container data early
+    container_df = load_container_data("containers.csv")
     
     if flight_data.empty or shipping_data.empty:
         print("Error: Could not load required data files")
@@ -947,25 +1022,47 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
     if route_evaluations:
         min_cost = min(route_evaluations, key=lambda x: x[1]['total_cost'])[1]['total_cost']
         min_time = min(route_evaluations, key=lambda x: x[1]['total_time'])[1]['total_time']
-    
+        min_emissions = min(route_evaluations, key=lambda x: x[1]['total_emissions'])[1]['total_emissions']
+
         filtered_routes = []
-    
-        if priority == "minimize_cost":
+        
+        if priority == "minimize_emissions":
+            # Include routes with emissions up to 8x the minimum
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 2:
+                if eval['total_emissions'] <= min_emissions * 8:
                     filtered_routes.append(route)
         elif priority == "minimize_time":
             for route, eval in route_evaluations:
-                if eval['total_time'] <= min_time * 3:
+                if eval['total_time'] <= min_time * 2:
+                    filtered_routes.append(route)
+        elif priority == "minimize_cost":
+            for route, eval in route_evaluations:
+                if eval['total_cost'] <= min_cost * 3:
                     filtered_routes.append(route)
         else:  # Balanced
             for route, eval in route_evaluations:
-                if eval['total_cost'] <= min_cost * 5 and eval['total_time'] <= min_time * 10:
+                if (eval['total_cost'] <= min_cost * 5 or 
+                    eval['total_time'] <= min_time * 3 or 
+                    eval['total_emissions'] <= min_emissions * 5):
                     filtered_routes.append(route)
-    
+
+        # Always ensure we have at least 3 routes
+        if len(filtered_routes) < 3 and route_evaluations:
+            print("Warning: Too few routes after filtering. Adding back some routes...")
+            if priority == "minimize_emissions":
+                # Sort remaining routes by emissions for eco-priority
+                remaining_routes = sorted(
+                    [(r[0], r[1]['total_emissions']) for r in route_evaluations if r[0] not in filtered_routes],
+                    key=lambda x: x[1]
+                )
+                filtered_routes.extend([r[0] for r in remaining_routes[:3 - len(filtered_routes)]])
+            else:
+                remaining_routes = [r[0] for r in route_evaluations if r[0] not in filtered_routes]
+                filtered_routes.extend(remaining_routes[:3 - len(filtered_routes)])
+
         print(f"Pre-filtered from {len(routes)} to {len(filtered_routes)} routes")
         routes = filtered_routes
-    
+
     # Apply NSGA-III optimization
     print("\nApplying multi-objective optimization (NSGA-III)...")
     optimized_routes = optimize_routes_nsga3(G, routes, cargo_weight, goods_type)
@@ -1013,15 +1110,52 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
             if route_str not in seen_routes and len(unique_ranked_routes) < 3:
                 unique_ranked_routes.append((route, evaluation))
                 seen_routes.add(route_str)
+    elif priority_int == 4 and len(unique_ranked_routes) < 3:  # For emissions priority
+        sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_emissions'])
+        for route, evaluation in sorted_candidates:
+            route_str = "→".join(route)
+            if route_str not in seen_routes and len(unique_ranked_routes) < 3:
+                unique_ranked_routes.append((route, evaluation))
+                seen_routes.add(route_str)
+
+    # After duplicate removal:
+    # 'unique_ranked_routes' now holds the routes in the order produced by rank_routes.
+    # To ensure the order remains consistent, re-sort based on the objective:
+    if priority_int == 1:
+        unique_ranked_routes.sort(key=lambda x: x[1]['total_cost'])
+    elif priority_int == 2:
+        unique_ranked_routes.sort(key=lambda x: x[1]['total_time'])
+    elif priority_int == 4:
+        unique_ranked_routes.sort(key=lambda x: x[1]['total_emissions'])
+    else:
+        # For balanced, recompute balanced score over the unique set
+        min_cost = min(r[1]['total_cost'] for r in unique_ranked_routes)
+        max_cost = max(r[1]['total_cost'] for r in unique_ranked_routes)
+        min_time = min(r[1]['total_time'] for r in unique_ranked_routes)
+        max_time = max(r[1]['total_time'] for r in unique_ranked_routes)
+        min_emissions = min(r[1]['total_emissions'] for r in unique_ranked_routes)
+        max_emissions = max(r[1]['total_emissions'] for r in unique_ranked_routes)
+        
+        def balanced_score(eval_data):
+            norm_cost = ((eval_data['total_cost'] - min_cost) / (max_cost - min_cost)) if max_cost > min_cost else 0
+            norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
+            norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
+            return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
+        
+        unique_ranked_routes.sort(key=lambda x: balanced_score(x[1]))
+    
+    # Finally, limit to top 3 (if there are more than 3)
+    unique_ranked_routes = unique_ranked_routes[:3]
     
     print_all_routes(all_evaluated_routes)
     
     max_display = min(3, len(unique_ranked_routes))
     print(f"\nTop {max_display} recommended routes:")
     
+    # Now container_df is available when we call print_route_details
     for i, (route, evaluation) in enumerate(unique_ranked_routes[:max_display]):
         print(f"\nROUTE OPTION {i+1}:")
-        print_route_details(route, evaluation)
+        print_route_details(route, evaluation, cargo_weight, container_df)
     
     print("\nOptimization complete! Review the route details above and check the generated map.")
 
