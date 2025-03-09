@@ -11,6 +11,7 @@ import {
 import "leaflet/dist/leaflet.css";
 import { Route, Segment } from "./api";
 import polyline from "@mapbox/polyline";
+import { capitalize } from "./stringUtils";
 
 type MapProps = {
   route: Route;
@@ -65,7 +66,13 @@ export default function Map(props: MapProps) {
           <React.Fragment key={index}>
             <Polyline
               positions={coordinates}
-              color={segment.mode === "land" ? "green" : "blue"}
+              color={
+                segment.mode === "air"
+                  ? "#3182ce"
+                  : segment.mode === "sea"
+                    ? "#319795"
+                    : "#38a169"
+              }
             >
               <Tooltip
                 position={[
@@ -78,7 +85,7 @@ export default function Map(props: MapProps) {
                 direction="top"
                 offset={[0, 0]}
               >
-                <span>{segment.mode}</span>
+                <span>{capitalize(segment.mode)}</span>
               </Tooltip>
             </Polyline>
           </React.Fragment>
