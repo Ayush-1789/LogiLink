@@ -466,24 +466,49 @@ export default function Home() {
                 <h2 className="section-title">Shipping Preferences</h2>
 
                 <div className="form-section">
+                  {/* Replace the priority dropdown with visual option cards */}
                   <div className="form-row">
                     <div className="form-field full-width">
-                      <label htmlFor="priority">Delivery Priority *</label>
-                      <select
-                        id="priority"
-                        name="priority"
-                        value={formikProps.values.priority}
-                        onChange={handleInputChange}
-                        onBlur={formikProps.handleBlur} // Add this to enable Formik validation on blur
-                        className={`input-field select-field ${formErrors.priority || 
-                          (formikProps.touched.priority && formikProps.errors.priority) ? 'error-input' : ''}`}
-                        required
-                      >
-                        <option value="cost">Cost-effective</option>
-                        <option value="speed">Fastest delivery</option>
-                        <option value="balanced">Balanced</option>
-                        <option value="eco">Eco-friendly</option>
-                      </select>
+                      <label className="preference-label">Delivery Priority *</label>
+                      
+                      <div className="priority-options">
+                        <div 
+                          className={`priority-option ${formikProps.values.priority === "cost" ? "active" : ""}`}
+                          onClick={() => formikProps.setFieldValue("priority", "cost")}
+                        >
+                          <div className="priority-icon">💰</div>
+                          <div className="priority-label">Cost-Effective</div>
+                          <div className="priority-description">Lowest shipping cost with reasonable transit times</div>
+                        </div>
+                        
+                        <div 
+                          className={`priority-option ${formikProps.values.priority === "speed" ? "active" : ""}`}
+                          onClick={() => formikProps.setFieldValue("priority", "speed")}
+                        >
+                          <div className="priority-icon">⚡</div>
+                          <div className="priority-label">Fastest Delivery</div>
+                          <div className="priority-description">Expedited shipping with minimal transit time</div>
+                        </div>
+                        
+                        <div 
+                          className={`priority-option ${formikProps.values.priority === "balanced" ? "active" : ""}`}
+                          onClick={() => formikProps.setFieldValue("priority", "balanced")}
+                        >
+                          <div className="priority-icon">⚖️</div>
+                          <div className="priority-label">Balanced</div>
+                          <div className="priority-description">Optimal balance between cost and delivery speed</div>
+                        </div>
+                        
+                        <div 
+                          className={`priority-option ${formikProps.values.priority === "eco" ? "active" : ""}`}
+                          onClick={() => formikProps.setFieldValue("priority", "eco")}
+                        >
+                          <div className="priority-icon">🌿</div>
+                          <div className="priority-label">Eco-Friendly</div>
+                          <div className="priority-description">Routes optimized for minimal environmental impact</div>
+                        </div>
+                      </div>
+                      
                       {(formikProps.touched.priority && formikProps.errors.priority) || formErrors.priority ? (
                         <div className="error-message">{formErrors.priority || formikProps.errors.priority}</div>
                       ) : null}
