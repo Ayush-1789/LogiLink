@@ -274,9 +274,9 @@ export default function Results() {
             </div>
           </section>
 
-          <div className="section-divider">
-            <span className="divider-text">Additional Options</span>
-          </div>
+          {/*<div className="section-divider">
+              <span className="divider-text">Additional Options</span>
+            </div> */}
 
           {getAdditionalRoutes().length > 0 && (
             <section className="route-section additional-section">
@@ -378,6 +378,9 @@ export default function Results() {
               </div>
             </section>
           )}
+          <button className="back-button" onClick={() => navigate(-1)}>
+            Go Back
+          </button>
         </div>
       ) : (
         <div className="no-routes-container">
