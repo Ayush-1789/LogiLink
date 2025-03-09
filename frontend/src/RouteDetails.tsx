@@ -32,6 +32,11 @@ export default function RouteDetails() {
     return { totalDistance, totalBorderCrossings };
   };
 
+  function capitalize(str: string) {
+    if (str.length === 0) return str; // Handle empty string
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
   return (
     <div className="detailed-route-container">
       <h2>Detailed Route Information</h2>
@@ -104,7 +109,7 @@ export default function RouteDetails() {
                 <h3
                   className={`timeline-title mode-${segment.mode.toLowerCase()}-text`}
                 >
-                  {segment.mode} Transport
+                  {capitalize(segment.mode)} Transport
                 </h3>
                 <span className="timeline-subtitle">
                   {segment.start} → {segment.end}
