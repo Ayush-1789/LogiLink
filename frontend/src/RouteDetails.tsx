@@ -5,6 +5,7 @@ import Map from "./Map";
 import LocationWeather from "./LocationWeather";
 import { DetailedRoute } from "./DetailedRoute";
 import { Route } from "./api";
+import { capitalize } from "./stringUtils";
 
 type RouteStats = {
   totalDistance: number;
@@ -31,11 +32,6 @@ export default function RouteDetails() {
 
     return { totalDistance, totalBorderCrossings };
   };
-
-  function capitalize(str: string) {
-    if (str.length === 0) return str; // Handle empty string
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
 
   return (
     <div className="detailed-route-container">
