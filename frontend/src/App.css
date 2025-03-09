@@ -1455,7 +1455,7 @@ button {
     background-color: #319795;
 }
 
-.mode-land-point .timeline-point-icon {
+.mode-road-point .timeline-point-icon {
     background-color: #38a169;
 }
 
@@ -1489,7 +1489,7 @@ button {
     );
 }
 
-.mode-land-line {
+.mode-road-line {
     background: linear-gradient(
         to bottom,
         #38a169 60%,
@@ -1579,7 +1579,7 @@ button {
     color: #319795;
 }
 
-.mode-land-text {
+.mode-road-text {
     color: #38a169;
 }
 
