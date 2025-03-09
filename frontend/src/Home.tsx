@@ -55,13 +55,10 @@ export default function Home() {
     priority: yup.string().required("Delivery priority is required"),
     goodsType: yup.string().required("Type of goods is required"),
     perishableLevel: yup.number().when("goodsType", {
-      is: (val: string) => val === "perishable",
-      then: yup
-        .number()
-        .required("Perishability level is required")
-        .min(1)
-        .max(10),
-      otherwise: yup.number().min(1).max(10),
+      is: "perishable",
+      then: (schema) =>
+        schema.required("Perishability level is required").min(1).max(10),
+      otherwise: (schema) => schema.min(1).max(10),
     }),
   });
 
