@@ -6,29 +6,47 @@ import {
   Marker,
   Popup,
   Polyline,
+  useMap,
 } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+import { Route, Segment } from "./api";
+import polyline from "@mapbox/polyline";
 
-export default function Map() {
-  const pointA: [number, number] = [51.505, -0.09];
-  const pointB: [number, number] = [51.7, -0.2];
+type MapProps = {
+  route: Route;
+};
 
-  const pointC: [number, number] = [51.44, -0.2];
-  const pointD: [number, number] = [51.65, -0.05];
+export default function Map(props: MapProps) {
+  const { route } = props;
+  const { segments } = route.data;
 
-  const segments = [
-    { positions: [pointA, pointC], color: "green", label: "Land route" },
-    { positions: [pointC, pointD], color: "blue", label: "Sea route" },
-    {
-      positions: [pointD, pointB],
-      color: "green",
-      label: "Another land route",
-    },
-  ];
+  // Function to set the bounds of the map
+  const SetMapBounds = ({ segments }: { segments: Segment[] }) => {
+    const map = useMap();
+    const bounds: [number, number][] = [];
+
+    segments.forEach((segment) => {
+      // If geometry is not null, decode it; otherwise, use the coordinates
+      const coordinates = segment.geometry
+        ? polyline.decode(segment.geometry)
+        : segment.coordinates;
+
+      coordinates.forEach((coord: [number, number]) => {
+        bounds.push(coord);
+      });
+    });
+
+    // Set the bounds to the map
+    if (bounds.length > 0) {
+      map.fitBounds(bounds);
+    }
+
+    return null; // This component does not render anything
+  };
 
   return (
     <MapContainer
-      center={pointA}
+      center={[51.505, -0.09]} // You can set this to a more appropriate center based on your data
       zoom={12}
       style={{ width: "100%", height: "100%" }}
     >
@@ -36,39 +54,36 @@ export default function Map() {
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       />
-      <Marker position={pointA}>
-        <Popup>Point A</Popup>
-      </Marker>
-      <Marker position={pointB}>
-        <Popup>Point B</Popup>
-      </Marker>
-      <Marker position={pointC}>
-        <Popup>Intermediary Point 1</Popup>
-      </Marker>
-      <Marker position={pointD}>
-        <Popup>Intermediary Point 2</Popup>
-      </Marker>
-      {segments.map((segment, index) => (
-        <React.Fragment key={index}>
-          <Polyline
-            key={index}
-            positions={segment.positions}
-            color={segment.color}
-          >
-            <Tooltip
-              position={[
-                (segment.positions[0][0] + segment.positions[1][0]) / 2,
-                (segment.positions[0][1] + segment.positions[1][1]) / 2,
-              ]}
-              permanent
-              direction="top"
-              offset={[0, 0]}
+      <SetMapBounds segments={segments} />
+      {segments.map((segment, index) => {
+        // Decode the geometry to get the coordinates
+        const coordinates = segment.geometry
+          ? polyline.decode(segment.geometry)
+          : segment.coordinates;
+
+        return (
+          <React.Fragment key={index}>
+            <Polyline
+              positions={coordinates}
+              color={segment.mode === "land" ? "green" : "blue"}
             >
-              <span>{segment.label}</span>
-            </Tooltip>
-          </Polyline>
-        </React.Fragment>
-      ))}
+              <Tooltip
+                position={[
+                  (coordinates[0][0] + coordinates[coordinates.length - 1][0]) /
+                    2,
+                  (coordinates[0][1] + coordinates[coordinates.length - 1][1]) /
+                    2,
+                ]}
+                permanent
+                direction="top"
+                offset={[0, 0]}
+              >
+                <span>{segment.mode}</span>
+              </Tooltip>
+            </Polyline>
+          </React.Fragment>
+        );
+      })}
     </MapContainer>
   );
 }

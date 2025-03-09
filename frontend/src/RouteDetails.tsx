@@ -2,9 +2,9 @@ import React from "react";
 import { useLocation, useNavigate } from "react-router";
 import { Shipment } from "./Home";
 import Map from "./Map";
-import { Route } from "./Route";
 import LocationWeather from "./LocationWeather";
 import { DetailedRoute } from "./DetailedRoute";
+import { Route } from "./api";
 
 type RouteStats = {
   totalDistance: number;
@@ -41,7 +41,7 @@ export default function RouteDetails() {
           <strong>{shipmentDetails.destination}</strong>
         </p>
         <div style={{ width: "100%", height: "400px" }}>
-          <Map />
+          <Map route={selectedRoute} />
         </div>
         <div className="overview-cards">
           <div className="overview-card">
@@ -49,7 +49,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Total Cost</span>
               <span className="overview-value">
-                ${selectedRoute.cost.toFixed(2)}
+                ${selectedRoute.data.total_cost.toFixed(2)}
               </span>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Transit Time</span>
               <span className="overview-value">
-                {selectedRoute.transitTime} days
+                {selectedRoute.data.total_time} days
               </span>
             </div>
           </div>
@@ -67,8 +67,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Total Distance</span>
               <span className="overview-value">
-                {calculateRouteStats(selectedRoute.detailedRoute).totalDistance}{" "}
-                km
+                {selectedRoute.data.total_distance} km
               </span>
             </div>
           </div>
@@ -78,7 +77,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Total Emissions</span>
               <span className="overview-value">
-                {selectedRoute.co2Emissions}
+                {selectedRoute.data.total_emissions}
               </span>
             </div>
           </div>
@@ -86,7 +85,7 @@ export default function RouteDetails() {
       </div>
 
       <div className="route-timeline">
-        {selectedRoute.detailedRoute.map((segment, index) => (
+        {selectedRoute.data.segments.map((segment, index) => (
           <div key={index} className="timeline-segment">
             <div
               className={`timeline-point mode-${segment.mode.toLowerCase()}-point`}
@@ -94,7 +93,7 @@ export default function RouteDetails() {
               <div className="timeline-point-icon"></div>
             </div>
             <div className="timeline-line">
-              {index < selectedRoute.detailedRoute.length - 1 && (
+              {index < selectedRoute.data.segments.length - 1 && (
                 <div
                   className={`timeline-mode-line mode-${segment.mode.toLowerCase()}-line`}
                 ></div>
@@ -108,104 +107,26 @@ export default function RouteDetails() {
                   {segment.mode} Transport
                 </h3>
                 <span className="timeline-subtitle">
-                  {segment.from} → {segment.to}
+                  {segment.start} → {segment.end}
                 </span>
-                {segment.borderCrossing && (
-                  <span className="border-crossing-badge">
-                    Border Crossing: {segment.borderCrossing}
-                  </span>
-                )}
               </div>
               <div className="timeline-details">
                 <div className="detail-group">
                   <div className="detail-item">
-                    <span className="detail-label">Provider:</span>
-                    <span className="detail-value">{segment.company}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Vehicle:</span>
-                    <span className="detail-value">{segment.vehicle}</span>
-                  </div>
-                </div>
-                <div className="detail-group">
-                  <div className="detail-item">
-                    <span className="detail-label">Departure:</span>
-                    <span className="detail-value">{segment.departure}</span>
-                  </div>
-                  <div className="detail-item">
-                    <span className="detail-label">Arrival:</span>
-                    <span className="detail-value">{segment.arrival}</span>
-                  </div>
-                </div>
-                <div className="detail-group">
-                  <div className="detail-item">
                     <span className="detail-label">Duration:</span>
-                    <span className="detail-value">{segment.duration}</span>
+                    <span className="detail-value">{segment.time_hr}</span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Distance:</span>
-                    <span className="detail-value">{segment.distance}</span>
+                    <span className="detail-value">{segment.distance_km}</span>
                   </div>
                 </div>
 
-                {segment.mode === "Air" && segment.flightDetails && (
-                  <div className="additional-details">
-                    <h4>Flight Details</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Flight Number:</span>
-                      <span className="detail-value">
-                        {segment.flightDetails.flightNumber}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Aircraft:</span>
-                      <span className="detail-value">
-                        {segment.flightDetails.aircraft}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {segment.mode === "Sea" && segment.vesselDetails && (
-                  <div className="additional-details">
-                    <h4>Vessel Details</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Capacity:</span>
-                      <span className="detail-value">
-                        {segment.vesselDetails.capacity}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Route:</span>
-                      <span className="detail-value">
-                        {segment.vesselDetails.route}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {segment.mode === "Land" && segment.trainDetails && (
-                  <div className="additional-details">
-                    <h4>Train Details</h4>
-                    <div className="detail-item">
-                      <span className="detail-label">Train Number:</span>
-                      <span className="detail-value">
-                        {segment.trainDetails.trainNumber}
-                      </span>
-                    </div>
-                    <div className="detail-item">
-                      <span className="detail-label">Carriage:</span>
-                      <span className="detail-value">
-                        {segment.trainDetails.carriageNumber}
-                      </span>
-                    </div>
-                  </div>
-                )}
-                {segment.fromCoords && (
+                {segment.coordinates && (
                   <div className="weather-section">
                     <LocationWeather
-                      coords={segment.fromCoords}
-                      location={segment.from}
+                      coords={segment.coordinates[0]}
+                      location={segment.start}
                     />
                   </div>
                 )}
