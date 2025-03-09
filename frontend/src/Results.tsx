@@ -11,7 +11,9 @@ export default function Results() {
   const location = useLocation();
   const shipmentDetails = location.state as Shipment;
   const navigate = useNavigate();
-  const [weightWarnings, setWeightWarnings] = useState<{[key: string]: boolean}>({});
+  const [weightWarnings, setWeightWarnings] = useState<{
+    [key: string]: boolean;
+  }>({});
   // Extract priority directly from shipmentDetails for easy access
   const priority = shipmentDetails?.priority || "balanced";
 
@@ -19,13 +21,13 @@ export default function Results() {
   useEffect(() => {
     if (shipmentDetails?.weight) {
       const weight = parseFloat(shipmentDetails.weight);
-      const warnings: {[key: string]: boolean} = {};
-      
+      const warnings: { [key: string]: boolean } = {};
+
       // Check each transportation mode
       Object.entries(WEIGHT_LIMITS).forEach(([mode, limit]) => {
         warnings[mode] = weight > limit;
       });
-      
+
       setWeightWarnings(warnings);
     }
   }, [shipmentDetails?.weight]);
@@ -34,6 +36,9 @@ export default function Results() {
     const routes = await getRoutes(
       shipmentDetails.origin,
       shipmentDetails.destination,
+      shipmentDetails.priority,
+      shipmentDetails.goodsType,
+      shipmentDetails.weight,
     );
 
     setAllRouteOptions(routes);
@@ -142,7 +147,9 @@ export default function Results() {
   };
 
   // Check if any transportation mode has a weight warning
-  const hasWeightWarning = Object.values(weightWarnings).some(warning => warning);
+  const hasWeightWarning = Object.values(weightWarnings).some(
+    (warning) => warning,
+  );
 
   return (
     <div className="results-container">
@@ -151,7 +158,8 @@ export default function Results() {
         <div className="weight-warning-banner">
           <div className="warning-icon">⚠️</div>
           <div className="warning-text">
-            <strong>Weight limit exceeded.</strong> Updated to a higher capacity cargo. Extra costs are included.
+            <strong>Weight limit exceeded.</strong> Updated to a higher capacity
+            cargo. Extra costs are included.
           </div>
         </div>
       )}
@@ -270,7 +278,6 @@ export default function Results() {
                     className="route-card alternative"
                     onClick={() => showRouteDetails(route)}
                   >
-                  
                     <div className="alt-route-content">
                       <div className="alt-route-main">
                         <div className="alt-route-header">
