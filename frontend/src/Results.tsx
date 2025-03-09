@@ -137,10 +137,10 @@ export default function Results() {
   // Format transit time to days and hours
   const formatTransitTime = (hours: number) => {
     if (hours < 24) {
-      return `${hours} hours`;
+      return `${Math.floor(hours)} hours`;
     }
     const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
+    const remainingHours = Math.floor(hours % 24);
     return remainingHours > 0
       ? `${days} days ${remainingHours} hrs`
       : `${days} days`;
@@ -180,7 +180,7 @@ export default function Results() {
             <div className="recommended-routes-grid">
               {getRecommendedRoutes().map((route, index) => (
                 <div
-                  key={route.id}
+                  key={index}
                   className={`route-card recommended rank-${index + 1}`}
                   onClick={() => showRouteDetails(route)}
                 >
@@ -220,12 +220,12 @@ export default function Results() {
                       <div className="metric primary">
                         <span className="metric-emphasis">
                           {priority === "cost"
-                            ? "₹" + route.data.total_cost?.toLocaleString()
+                            ? "₹" + route.data.total_cost.toFixed(2)
                             : priority === "speed"
                               ? formatTransitTime(route.data.total_time)
                               : priority === "eco"
-                                ? `${route.data.total_emissions} kg CO₂`
-                                : "₹" + route.data.total_cost?.toLocaleString()}
+                                ? `${route.data.total_emissions.toFixed(2)} kg CO₂`
+                                : "₹" + route.data.total_cost.toFixed(2)}
                         </span>
                         <span className="metric-label-primary">
                           {getPriorityLabel()} Option
@@ -236,7 +236,7 @@ export default function Results() {
                         <div className="metric">
                           <span className="metric-icon">💰</span>
                           <span className="metric-value">
-                            ₹{route.data.total_cost?.toLocaleString() || "N/A"}
+                            ₹{route.data.total_cost.toFixed(2) || "N/A"}
                           </span>
                         </div>
                         <div className="metric">
@@ -249,7 +249,7 @@ export default function Results() {
                           <span className="metric-icon">🌿</span>
                           <span className="metric-value">
                             {route.data.total_emissions
-                              ? `${route.data.total_emissions} kg`
+                              ? `${route.data.total_emissions.toFixed(2)} kg`
                               : "N/A"}
                           </span>
                         </div>

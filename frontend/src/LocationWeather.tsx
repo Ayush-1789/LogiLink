@@ -43,10 +43,10 @@ const Weather = async ({
     // Return the weather data
     return {
       current: {
-        temperature2m: current.variables(0)!.value(),
-        rain: current.variables(1)!.value(),
-        showers: current.variables(2)!.value(),
-        snowfall: current.variables(3)!.value(),
+        temperature2m: current.variables(0)!.value().toFixed(2),
+        rain: current.variables(1)!.value().toFixed(2),
+        showers: current.variables(2)!.value().toFixed(2),
+        snowfall: current.variables(3)!.value().toFixed(2),
       },
     };
   } catch (error) {
@@ -147,8 +147,6 @@ export default function LocationWeather({
               {weatherData.current.showers} mm
             </span>
           </div>
-
-
         </div>
       ) : (
         <div className="weather-error">No weather data available</div>

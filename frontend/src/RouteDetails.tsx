@@ -58,7 +58,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Transit Time</span>
               <span className="overview-value">
-                {selectedRoute.data.total_time} days
+                {selectedRoute.data.total_time.toFixed(2)} days
               </span>
             </div>
           </div>
@@ -67,7 +67,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Total Distance</span>
               <span className="overview-value">
-                {selectedRoute.data.total_distance} km
+                {selectedRoute.data.total_distance.toFixed(2)} km
               </span>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function RouteDetails() {
             <div className="overview-details">
               <span className="overview-label">Total Emissions</span>
               <span className="overview-value">
-                {selectedRoute.data.total_emissions}
+                {selectedRoute.data.total_emissions.toFixed(2)}
               </span>
             </div>
           </div>
@@ -114,11 +114,15 @@ export default function RouteDetails() {
                 <div className="detail-group">
                   <div className="detail-item">
                     <span className="detail-label">Duration:</span>
-                    <span className="detail-value">{segment.time_hr}</span>
+                    <span className="detail-value">
+                      {segment.time_hr.toFixed(2)} hours
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="detail-label">Distance:</span>
-                    <span className="detail-value">{segment.distance_km}</span>
+                    <span className="detail-value">
+                      {segment.distance_km.toFixed(2)} km
+                    </span>
                   </div>
                 </div>
 
