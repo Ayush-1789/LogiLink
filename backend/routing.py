@@ -674,7 +674,13 @@ def optimize_routes_nsga3(G: nx.DiGraph, route_options: List[List[str]], cargo_w
         route = route_options[route_idx]
         evaluation = evaluate_route(G, route, cargo_weight, goods_type)
         optimized_routes.append((route, evaluation))
-    
+
+    existing_routes = {tuple(route) for route, _ in optimized_routes}
+    for route in route_options:
+        if tuple(route) not in existing_routes:
+            evaluation = evaluate_route(G, route, cargo_weight, goods_type)
+            optimized_routes.append((route, evaluation))
+                  
     return optimized_routes
 
 # -------------------------------------------------------------------------
@@ -754,11 +760,13 @@ def tabu_search(G: nx.DiGraph, initial_route: List[str], cargo_weight: float, go
 # -------------------------------------------------------------------------
 def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priority: int) -> List[Tuple[List[str], Dict[str, Any]]]:
     """
-    Rank routes based on priority. Returns top 3 routes.
+    Rank routes based on priority
     """
     if not optimized_routes:
         return []
 
+    print("Optimized routes:", len(optimized_routes))
+    
     # Create a copy to avoid modifying original
     routes_to_rank = optimized_routes.copy()
     
@@ -785,11 +793,18 @@ def rank_routes(optimized_routes: List[Tuple[List[str], Dict[str, Any]]], priori
             norm_time = ((eval_data['total_time'] - min_time) / (max_time - min_time)) if max_time > min_time else 0
             norm_emissions = ((eval_data['total_emissions'] - min_emissions) / (max_emissions - min_emissions)) if max_emissions > min_emissions else 0
             return (0.4 * norm_cost) + (0.4 * norm_time) + (0.2 * norm_emissions)
-
+        
         sorted_routes = sorted(routes_to_rank, key=lambda x: balanced_score(x[1]))
 
-    # Always return exactly 3 routes if available
-    return sorted_routes[:3]
+    print("Sorted:", len(sorted_routes))
+    
+    unique_routes = []
+    for route in sorted_routes:
+        print("->".join(route[0]))
+        if route not in unique_routes:
+            unique_routes.append(route)
+
+    return unique_routes
 
 
 def create_vehicle_animation(points, vehicle_type, segment):
@@ -1080,17 +1095,21 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
         refined_route, refined_eval = tabu_search(G, route, cargo_weight, goods_type, priority_int)
         refined_routes.append((refined_route, refined_eval))
     
-    print("Local refinement complete")
+    print("Local refinement complete:", len(refined_routes))
     
     # Rank routes based on user priority using refined_routes
     print(f"\nRanking routes based on priority: {priority}")
     ranked_routes = rank_routes(refined_routes, priority_int)
+
+    print("Ranking complete:", len(ranked_routes))
     
     # Remove duplicate routes (same nodes in same order)
     unique_ranked_routes = []
     seen_routes = set()
     for route, evaluation in ranked_routes:
         route_str = "→".join(route)
+        print(route_str)
+        print(seen_routes)
         if route_str not in seen_routes:
             seen_routes.add(route_str)
             evaluation["modes"] = []
@@ -1152,16 +1171,10 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
         
         unique_ranked_routes.sort(key=lambda x: balanced_score(x[1]))
     
-    # Finally, limit to top 3 (if there are more than 3)
-    unique_ranked_routes = unique_ranked_routes[:3]
-    
     print_all_routes(all_evaluated_routes)
     
-    max_display = min(3, len(unique_ranked_routes))
-    print(f"\nTop {max_display} recommended routes:")
-    
     # Now container_df is available when we call print_route_details
-    for i, (route, evaluation) in enumerate(unique_ranked_routes[:max_display]):
+    for i, (route, evaluation) in enumerate(unique_ranked_routes):
         print(f"\nROUTE OPTION {i+1}:")
         print_route_details(route, evaluation, cargo_weight, container_df)
     
@@ -1190,7 +1203,5 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
                 segments_with_coordinates.append(segment)
 
         unique_ranked_routes[i][1]["segments"] = segments_with_coordinates
-
-    print("Modified:", unique_ranked_routes)
 
     return unique_ranked_routes
