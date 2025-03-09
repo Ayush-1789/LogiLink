@@ -15,8 +15,6 @@ export default function Results() {
   const [weightWarnings, setWeightWarnings] = useState<{
     [key: string]: boolean;
   }>({});
-  // Extract priority directly from shipmentDetails for easy access
-  const priority = shipmentDetails?.priority || "balanced";
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -58,17 +56,17 @@ export default function Results() {
   // Filter routes based on priority selected in the Home page
   const priorityFilteredRoutes = React.useMemo(() => {
     // Apply the priority filter
-    if (priority === "cost") {
+    if (shipmentDetails.priority === "cost") {
       // Sort by cost (lowest first)
       return [...allRouteOptions].sort(
         (a, b) => a.data.total_cost - b.data.total_cost,
       );
-    } else if (priority === "speed") {
+    } else if (shipmentDetails.priority === "time") {
       // Sort by transit time (fastest first)
       return [...allRouteOptions].sort(
         (a, b) => a.data.total_time - b.data.total_time,
       );
-    } else if (priority === "eco") {
+    } else if (shipmentDetails.priority === "eco") {
       // Sort by emissions (lowest first)
       return [...allRouteOptions].sort(
         (a, b) =>
@@ -96,7 +94,7 @@ export default function Results() {
         return scoreA - scoreB;
       });
     }
-  }, [allRouteOptions, priority]);
+  }, [allRouteOptions, shipmentDetails.priority]);
 
   // Get recommended routes (top 3)
   const getRecommendedRoutes = () => {
@@ -115,10 +113,10 @@ export default function Results() {
 
   // Get the priority label for UI display
   const getPriorityLabel = () => {
-    switch (priority) {
+    switch (shipmentDetails.priority) {
       case "cost":
         return "Cost-Effective";
-      case "speed":
+      case "time":
         return "Fastest";
       case "eco":
         return "Eco-Friendly";
@@ -129,10 +127,10 @@ export default function Results() {
 
   // Get the priority emoji/icon
   const getPriorityIcon = () => {
-    switch (priority) {
+    switch (shipmentDetails.priority) {
       case "cost":
         return "💰"; // Money bag for cost-effective
-      case "speed":
+      case "time":
         return "⚡"; // Lightning for speed
       case "eco":
         return "🌿"; // Leaf for eco-friendly
@@ -228,11 +226,11 @@ export default function Results() {
                     <div className="key-metrics">
                       <div className="metric primary">
                         <span className="metric-emphasis">
-                          {priority === "cost"
+                          {shipmentDetails.priority === "cost"
                             ? "₹" + route.data.total_cost.toFixed(2)
-                            : priority === "speed"
+                            : shipmentDetails.priority === "time"
                               ? formatTransitTime(route.data.total_time)
-                              : priority === "eco"
+                              : shipmentDetails.priority === "eco"
                                 ? `${route.data.total_emissions.toFixed(2)} kg CO₂`
                                 : "₹" + route.data.total_cost.toFixed(2)}
                         </span>
