@@ -1181,16 +1181,8 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
         print(seen_routes)
         if route_str not in seen_routes:
             seen_routes.add(route_str)
-            evaluation["modes"] = []
-            for j in range(len(route) - 1):
-                segment = next((s for s in evaluation['segments'] if s['start'] == route[j] and s['end'] == route[j + 1]), None)
-
-                if segment:
-                    if segment["mode"] not in evaluation["modes"]:
-                        evaluation["modes"].append(segment["mode"])
-
             unique_ranked_routes.append((route, evaluation))
-    
+
     # If we have fewer than 3 refined routes, supplement from candidate routes.
     if priority_int == 2 and len(unique_ranked_routes) < 3:
         sorted_candidates = sorted(all_evaluated_routes, key=lambda x: x[1]['total_time'])
@@ -1252,6 +1244,8 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
     for i, (route, evaluation) in enumerate(unique_ranked_routes):
         segments_with_coordinates = []
 
+        evaluation["modes"] = []
+
         for j in range(len(route) - 1):
             segment = next((s for s in evaluation['segments']
                             if s['start'] == route[j] and s['end'] == route[j + 1]), None)
@@ -1268,6 +1262,9 @@ def get_routing(source: str, destination: str, priority_choice: str, goods_type_
                 segment['coordinates'] = [
                     (start_lat, start_lon), (end_lat, end_lon)
                 ]
+
+                if segment["mode"] not in evaluation["modes"]:
+                    evaluation["modes"].append(segment["mode"])
 
                 segments_with_coordinates.append(segment)
 
