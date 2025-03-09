@@ -3,6 +3,9 @@ import * as yup from "yup";
 import { Formik } from "formik";
 import { useNavigate } from "react-router";
 
+// Maximum weight limit in kg
+const MAX_WEIGHT_LIMIT = 75000;
+
 // Update type definition to remove hazardous and perishable checkboxes
 export type Shipment = {
   origin: string;
@@ -16,16 +19,96 @@ export type Shipment = {
 export default function Home() {
   const navigate = useNavigate();
   const [showPerishableSlider, setShowPerishableSlider] = useState(false);
+  const [weightError, setWeightError] = useState<string | null>(null);
+  const [sameLocationError, setSameLocationError] = useState<string | null>(null);
+  const [formErrors, setFormErrors] = useState<{[key: string]: string}>({});
 
-  // Update schema to remove hazardous and perishable checkboxes
+  // Update schema to require all fields
   const schema = yup.object({
-    origin: yup.string().required(),
-    destination: yup.string().required(),
-    weight: yup.string().required(),
-    priority: yup.string(),
-    goodsType: yup.string().required(),
-    perishableLevel: yup.number().min(1).max(10),
+    origin: yup.string().required("Origin is required"),
+    destination: yup.string()
+      .required("Destination is required")
+      .test(
+        'different-locations',
+        'Origin and destination cannot be the same',
+        function(value) {
+          // Access other field values from the context
+          const { origin } = this.parent;
+          if (!origin || !value) return true; // Skip validation if either field is empty
+          return origin.trim().toLowerCase() !== value.trim().toLowerCase();
+        }
+      ),
+    weight: yup.string()
+      .required("Cargo weight is required")
+      .test(
+        'weight-limit',
+        `Weight exceeds maximum limit of ${MAX_WEIGHT_LIMIT.toLocaleString()} kg`,
+        (value) => {
+          const numWeight = parseFloat(value || '0');
+          return !isNaN(numWeight) && numWeight <= MAX_WEIGHT_LIMIT;
+        }
+      ),
+    priority: yup.string().required("Delivery priority is required"),
+    goodsType: yup.string().required("Type of goods is required"),
+    perishableLevel: yup.number().when("goodsType", {
+      is: (val: string) => val === "perishable",
+      then: yup.number().required("Perishability level is required").min(1).max(10),
+      otherwise: yup.number().min(1).max(10),
+    }),
   });
+
+  const validateSubmit = (values: Shipment) => {
+    // Check for empty fields
+    const errors: {[key: string]: string} = {};
+    
+    if (!values.origin.trim()) {
+      errors.origin = "Origin is required";
+    }
+    
+    if (!values.destination.trim()) {
+      errors.destination = "Destination is required";
+    }
+    
+    if (!values.weight.trim()) {
+      errors.weight = "Cargo weight is required";
+    }
+    
+    if (!values.priority.trim()) {
+      errors.priority = "Delivery priority is required";
+    }
+    
+    if (!values.goodsType.trim()) {
+      errors.goodsType = "Type of goods is required";
+    }
+    
+    if (values.goodsType === "perishable" && (values.perishableLevel < 1 || values.perishableLevel > 10)) {
+      errors.perishableLevel = "Valid perishability level (1-10) is required";
+    }
+    
+    setFormErrors(errors);
+    
+    if (Object.keys(errors).length > 0) {
+      return false;
+    }
+    
+    // Check weight limit
+    const weight = parseFloat(values.weight);
+    if (!isNaN(weight) && weight > MAX_WEIGHT_LIMIT) {
+      setWeightError(`Total weight limit has exceeded ${MAX_WEIGHT_LIMIT.toLocaleString()} kg, can't find modes of transport`);
+      return false;
+    }
+    setWeightError(null);
+    
+    // Check if origin and destination are the same
+    if (values.origin.trim().toLowerCase() === values.destination.trim().toLowerCase() && 
+        values.origin.trim() !== '') {
+      setSameLocationError('Origin and destination cannot be the same');
+      return false;
+    }
+    setSameLocationError(null);
+    
+    return true;
+  };
 
   return (
     <Formik
@@ -38,13 +121,30 @@ export default function Home() {
         goodsType: "standard", // Default goods type
         perishableLevel: 5, // Default perishable level
       }}
-      onSubmit={(data) => navigate("/results", { state: data })}
+      onSubmit={(data, formikHelpers) => {
+        // Touch all fields to show all validation errors
+        Object.keys(data).forEach(field => {
+          formikHelpers.setFieldTouched(field, true);
+        });
+        
+        if (validateSubmit(data)) {
+          navigate("/results", { state: data });
+        }
+      }}
     >
       {(formikProps) => {
         // Update perishable slider visibility when goods type changes
         const handleGoodsTypeChange = (e) => {
           formikProps.handleChange(e);
           setShowPerishableSlider(e.target.value === "perishable");
+          // Clear any form error for this field
+          if (formErrors.goodsType) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors.goodsType;
+              return newErrors;
+            });
+          }
         };
 
         // Get color based on perishable level with smooth transition
@@ -65,9 +165,44 @@ export default function Home() {
           return colors[level - 1] || colors[4]; // Default to middle color if invalid
         };
 
+        // Check for same location when either field changes
+        const handleLocationChange = (e) => {
+          formikProps.handleChange(e);
+          
+          // Clear any form error for this field
+          if (formErrors[e.target.name]) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors[e.target.name];
+              return newErrors;
+            });
+          }
+          
+          // If both fields have values, check if they're the same
+          const fieldName = e.target.name;
+          const otherFieldName = fieldName === 'origin' ? 'destination' : 'origin';
+          const currentValue = e.target.value.trim().toLowerCase();
+          const otherValue = formikProps.values[otherFieldName]?.trim().toLowerCase();
+          
+          if (currentValue && otherValue && currentValue === otherValue) {
+            setSameLocationError('Origin and destination cannot be the same');
+          } else {
+            setSameLocationError(null);
+          }
+        };
+
         // Add this for smooth transition on slider change
         const handlePerishableChange = (e) => {
           formikProps.handleChange(e);
+          
+          // Clear any form error for this field
+          if (formErrors.perishableLevel) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors.perishableLevel;
+              return newErrors;
+            });
+          }
           
           // Add animation pulse effect when slider value changes
           const valueDisplay = document.querySelector('.perishable-value');
@@ -83,6 +218,15 @@ export default function Home() {
         const handleMarkerClick = (value) => {
           formikProps.setFieldValue('perishableLevel', value);
           
+          // Clear any form error for this field
+          if (formErrors.perishableLevel) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors.perishableLevel;
+              return newErrors;
+            });
+          }
+          
           // Add animation pulse effect when marker is clicked
           const valueDisplay = document.querySelector('.perishable-value');
           if (valueDisplay) {
@@ -93,7 +237,53 @@ export default function Home() {
           }
         };
 
+        // Add weight check on change
+        const handleWeightChange = (e) => {
+          formikProps.handleChange(e);
+          
+          // Clear any form error for this field
+          if (formErrors.weight) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors.weight;
+              return newErrors;
+            });
+          }
+          
+          const weight = parseFloat(e.target.value);
+          if (!isNaN(weight) && weight > MAX_WEIGHT_LIMIT) {
+            setWeightError(`Total weight limit has exceeded ${MAX_WEIGHT_LIMIT.toLocaleString()} kg, can't find modes of transport`);
+          } else {
+            setWeightError(null);
+          }
+        };
+
+        // Standard input change handler to clear errors
+        const handleInputChange = (e) => {
+          formikProps.handleChange(e);
+          
+          // Clear any form error for this field
+          if (formErrors[e.target.name]) {
+            setFormErrors(prev => {
+              const newErrors = {...prev};
+              delete newErrors[e.target.name];
+              return newErrors;
+            });
+          }
+        };
+
         const perishableColor = getPerishableColor(formikProps.values.perishableLevel);
+
+        // Check if form has any empty required fields
+        const hasEmptyRequiredFields = () => {
+          return !formikProps.values.origin.trim() || 
+                 !formikProps.values.destination.trim() || 
+                 !formikProps.values.weight.trim() ||
+                 !formikProps.values.priority.trim() ||
+                 !formikProps.values.goodsType.trim() ||
+                 (formikProps.values.goodsType === "perishable" && 
+                  (formikProps.values.perishableLevel < 1 || formikProps.values.perishableLevel > 10));
+        };
 
         return (
           <div className="form-container">
@@ -104,30 +294,42 @@ export default function Home() {
                 <div className="form-section">
                   <div className="form-row two-columns">
                     <div className="form-field">
-                      <label htmlFor="origin">Origin</label>
+                      <label htmlFor="origin">Origin *</label>
                       <input
                         type="text"
                         id="origin"
                         name="origin"
                         value={formikProps.values.origin}
-                        onChange={formikProps.handleChange}
+                        onChange={handleLocationChange}
+                        onBlur={formikProps.handleBlur} // Add this to enable Formik validation on blur
                         placeholder="City, Country"
                         required
-                        className="input-field"
+                        className={`input-field ${(sameLocationError || formErrors.origin || 
+                          (formikProps.touched.origin && formikProps.errors.origin)) ? 'error-input' : ''}`}
                       />
+                      {(formikProps.touched.origin && formikProps.errors.origin) || formErrors.origin ? (
+                        <div className="error-message">{formErrors.origin || formikProps.errors.origin}</div>
+                      ) : null}
                     </div>
                     <div className="form-field">
-                      <label htmlFor="destination">Destination</label>
+                      <label htmlFor="destination">Destination *</label>
                       <input
                         type="text"
                         id="destination"
                         name="destination"
                         value={formikProps.values.destination}
-                        onChange={formikProps.handleChange}
+                        onChange={handleLocationChange}
+                        onBlur={formikProps.handleBlur} // Add this to enable Formik validation on blur
                         placeholder="City, Country"
                         required
-                        className="input-field"
+                        className={`input-field ${(sameLocationError || formErrors.destination || 
+                          (formikProps.touched.destination && formikProps.errors.destination)) ? 'error-input' : ''}`}
                       />
+                      {(formikProps.touched.destination && formikProps.errors.destination) || sameLocationError || formErrors.destination ? (
+                        <div className="error-message">
+                          {formErrors.destination || sameLocationError || formikProps.errors.destination}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -139,28 +341,36 @@ export default function Home() {
                 <div className="form-section">
                   <div className="form-row two-columns">
                     <div className="form-field">
-                      <label htmlFor="weight">Weight (kg)</label>
+                      <label htmlFor="weight">Weight (kg) *</label>
                       <input
                         type="number"
                         id="weight"
                         name="weight"
                         value={formikProps.values.weight}
-                        onChange={formikProps.handleChange}
+                        onChange={handleWeightChange}
+                        onBlur={formikProps.handleBlur}
                         min="0"
                         step="0.1"
                         required
-                        className="input-field"
+                        className={`input-field ${(weightError || formErrors.weight) ? 'error-input' : ''}`}
                         placeholder="0.0"
                       />
+                      {(formikProps.touched.weight && formikProps.errors.weight) || weightError || formErrors.weight ? (
+                        <div className="error-message">
+                          {formErrors.weight || weightError || formikProps.errors.weight}
+                        </div>
+                      ) : null}
                     </div>
                     <div className="form-field">
-                      <label htmlFor="goodsType">Type of Goods</label>
+                      <label htmlFor="goodsType">Type of Goods *</label>
                       <select
                         id="goodsType"
                         name="goodsType"
                         value={formikProps.values.goodsType}
                         onChange={handleGoodsTypeChange}
-                        className="input-field select-field"
+                        onBlur={formikProps.handleBlur} // Add this to enable Formik validation on blur
+                        className={`input-field select-field ${formErrors.goodsType || 
+                          (formikProps.touched.goodsType && formikProps.errors.goodsType) ? 'error-input' : ''}`}
                         required
                       >
                         <option value="standard">Standard</option>
@@ -170,6 +380,9 @@ export default function Home() {
                         <option value="fragile">Fragile</option>
                         <option value="oversized">Oversized</option>
                       </select>
+                      {(formikProps.touched.goodsType && formikProps.errors.goodsType) || formErrors.goodsType ? (
+                        <div className="error-message">{formErrors.goodsType || formikProps.errors.goodsType}</div>
+                      ) : null}
                     </div>
                   </div>
 
@@ -177,7 +390,7 @@ export default function Home() {
                     <div className="form-row">
                       <div className="form-field full-width perishable-slider-container">
                         <div className="perishable-header">
-                          <label htmlFor="perishableLevel">Perishability Level</label>
+                          <label htmlFor="perishableLevel">Perishability Level *</label>
                           <span 
                             className="perishable-value" 
                             style={{ 
@@ -200,6 +413,7 @@ export default function Home() {
                             value={formikProps.values.perishableLevel}
                             onChange={handlePerishableChange}
                             className="slider-input"
+                            required
                           />
                           <div 
                             className="slider-track" 
@@ -238,6 +452,10 @@ export default function Home() {
                          
                           <span className="highly-perishable">Highly perishable</span>
                         </div>
+                        
+                        {formErrors.perishableLevel && (
+                          <div className="error-message">{formErrors.perishableLevel}</div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -250,32 +468,62 @@ export default function Home() {
                 <div className="form-section">
                   <div className="form-row">
                     <div className="form-field full-width">
-                      <label htmlFor="priority">Delivery Priority</label>
+                      <label htmlFor="priority">Delivery Priority *</label>
                       <select
                         id="priority"
                         name="priority"
                         value={formikProps.values.priority}
-                        onChange={formikProps.handleChange}
-                        className="input-field select-field"
+                        onChange={handleInputChange}
+                        onBlur={formikProps.handleBlur} // Add this to enable Formik validation on blur
+                        className={`input-field select-field ${formErrors.priority || 
+                          (formikProps.touched.priority && formikProps.errors.priority) ? 'error-input' : ''}`}
+                        required
                       >
                         <option value="cost">Cost-effective</option>
                         <option value="speed">Fastest delivery</option>
                         <option value="balanced">Balanced</option>
                         <option value="eco">Eco-friendly</option>
                       </select>
+                      {(formikProps.touched.priority && formikProps.errors.priority) || formErrors.priority ? (
+                        <div className="error-message">{formErrors.priority || formikProps.errors.priority}</div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="form-actions">
-                <button type="submit" className="primary-button">
+                <button 
+                  type="button" // Change to button type to handle submission manually
+                  className="primary-button"
+                  onClick={() => {
+                    // Touch all fields to show validation errors
+                    Object.keys(formikProps.values).forEach(field => {
+                      formikProps.setFieldTouched(field, true, true);
+                    });
+                    
+                    // Then submit the form
+                    formikProps.handleSubmit();
+                  }}
+                  disabled={
+                    !!weightError || 
+                    !!sameLocationError || 
+                    !formikProps.isValid || 
+                    hasEmptyRequiredFields() ||
+                    Object.keys(formErrors).length > 0
+                  }
+                >
                   Find Optimal Routes
                 </button>
                 <button
                   type="button"
                   className="secondary-button"
-                  onClick={formikProps.handleReset}
+                  onClick={() => {
+                    formikProps.handleReset();
+                    setWeightError(null);
+                    setSameLocationError(null);
+                    setFormErrors({});
+                  }}
                 >
                   Clear Form
                 </button>
