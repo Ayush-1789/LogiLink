@@ -3,10 +3,18 @@ import { useLocation, useNavigate } from "react-router";
 import { Route } from "./Route";
 import mockRoutes from "./mockRoutes";
 
+// Weight capacity limits for different transportation modes
+const WEIGHT_LIMITS = {
+  Air: 45000, // 45,000 kg per ULD
+  Sea: 20000 * 1000, // 20,000 TEU (assuming 1 TEU ~= 1000 kg)
+  Land: 25000, // 25,000 kg per truckload
+};
+
 export default function Results() {
   const location = useLocation();
   const shipmentDetails = location.state;
   const navigate = useNavigate();
+  const [weightWarnings, setWeightWarnings] = useState<{[key: string]: boolean}>({});
   // Extract priority directly from shipmentDetails for easy access
   const priority = shipmentDetails?.priority || "balanced";
   
@@ -14,6 +22,21 @@ export default function Results() {
   const allRouteOptions = React.useMemo(() => {
     return typeof mockRoutes === 'function' ? mockRoutes(shipmentDetails) : mockRoutes;
   }, [shipmentDetails]);
+  
+  // Check weight limits and set warnings
+  useEffect(() => {
+    if (shipmentDetails?.weight) {
+      const weight = parseFloat(shipmentDetails.weight);
+      const warnings: {[key: string]: boolean} = {};
+      
+      // Check each transportation mode
+      Object.entries(WEIGHT_LIMITS).forEach(([mode, limit]) => {
+        warnings[mode] = weight > limit;
+      });
+      
+      setWeightWarnings(warnings);
+    }
+  }, [shipmentDetails?.weight]);
   
   // Filter routes based on priority selected in the Home page
   const priorityFilteredRoutes = React.useMemo(() => {
@@ -90,8 +113,21 @@ export default function Results() {
       : `${days} days`;
   };
 
+  // Check if any transportation mode has a weight warning
+  const hasWeightWarning = Object.values(weightWarnings).some(warning => warning);
+
   return (
     <div className="results-container">
+      {/* Weight Warning Banner */}
+      {hasWeightWarning && (
+        <div className="weight-warning-banner">
+          <div className="warning-icon">⚠️</div>
+          <div className="warning-text">
+            <strong>Weight limit exceeded.</strong> Updated to a higher capacity cargo. Extra costs are included.
+          </div>
+        </div>
+      )}
+
       {priorityFilteredRoutes.length > 0 ? (
         <div className="routes-content">
           {/* Top 3 Recommendations Section */}
@@ -111,6 +147,7 @@ export default function Results() {
                   className={`route-card recommended rank-${index + 1}`}
                   onClick={() => showRouteDetails(route)}
                 >
+                  
                   <div className="recommendation-badge">#{index + 1} Recommended</div>
                   <div className="route-card-inner">
                     <div className="card-main-info">
@@ -179,6 +216,7 @@ export default function Results() {
                     className="route-card alternative"
                     onClick={() => showRouteDetails(route)}
                   >
+                  
                     <div className="alt-route-content">
                       <div className="alt-route-main">
                         <div className="alt-route-header">
