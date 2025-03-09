@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { getRoutes, Route } from "./api";
 import { Shipment } from "./Home";
+import Spinner from "./Spinner";
 const WEIGHT_LIMITS = {
   Air: 45000, // 45,000 kg per ULD
   Sea: 20000 * 1000, // 20,000 TEU (assuming 1 TEU ~= 1000 kg)
@@ -16,6 +17,8 @@ export default function Results() {
   }>({});
   // Extract priority directly from shipmentDetails for easy access
   const priority = shipmentDetails?.priority || "balanced";
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [allRouteOptions, setAllRouteOptions] = useState<Route[]>([]);
   useEffect(() => {
@@ -33,6 +36,8 @@ export default function Results() {
   }, [shipmentDetails?.weight]);
 
   const onLoad = async () => {
+    setIsLoading(true);
+
     const routes = await getRoutes(
       shipmentDetails.origin,
       shipmentDetails.destination,
@@ -42,6 +47,8 @@ export default function Results() {
     );
 
     setAllRouteOptions(routes);
+
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -164,7 +171,9 @@ export default function Results() {
         </div>
       )}
 
-      {priorityFilteredRoutes.length > 0 ? (
+      {isLoading ? (
+        <Spinner />
+      ) : priorityFilteredRoutes.length > 0 ? (
         <div className="routes-content">
           {/* Top 3 Recommendations Section */}
           <section className="route-section recommended-section">
