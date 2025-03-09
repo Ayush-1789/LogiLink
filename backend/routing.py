@@ -10,6 +10,9 @@ from pymoo.core.problem import Problem
 from pymoo.optimize import minimize
 import time
 from functools import lru_cache
+import pickle
+import os.path
+import concurrent.futures
 
 # Add this after your imports section
 GOODS_TYPE_MULTIPLIER = {
@@ -38,16 +41,31 @@ def calculate_co2(mode, distance_km, weight_kg):
 location_cache = {}
 country_cache = {}
 
-@lru_cache(maxsize=128)
 def geocode_location(location: str) -> tuple:
     """
-    Get coordinates for a location using the Nominatim API
+    Get coordinates for a location using the Nominatim API with persistent caching
     Returns a tuple of (success, coordinates, country)
     """
+    # First check in-memory cache
     if location in location_cache:
         return True, location_cache[location], country_cache.get(location, "Unknown")
     
-    # Format for Nominatim API (add user-agent to comply with terms)
+    # Then check persistent cache file
+    cache_file = "geocode_cache.pkl"
+    if os.path.exists(cache_file):
+        try:
+            with open(cache_file, 'rb') as f:
+                cache_data = pickle.load(f)
+                if location in cache_data:
+                    coords, country = cache_data[location]
+                    # Update in-memory cache
+                    location_cache[location] = coords
+                    country_cache[location] = country
+                    return True, coords, country
+        except Exception as e:
+            print(f"Warning: Could not load cache: {e}")
+    
+    # If not in cache, make API request (rest of your original code)
     url = f"https://nominatim.openstreetmap.org/search?q={location}&format=json&limit=1&addressdetails=1"
     headers = {'User-Agent': 'MultiModalLogisticsOptimizer/1.0'}
     
@@ -58,7 +76,7 @@ def geocode_location(location: str) -> tuple:
         response = requests.get(url, headers=headers)
         data = response.json()
         
-        if (data and len(data) > 0):
+        if data and len(data) > 0:
             # Get coordinates (lon,lat format for OSRM)
             lon = data[0]['lon']
             lat = data[0]['lat']
@@ -70,6 +88,22 @@ def geocode_location(location: str) -> tuple:
             # Cache for future use
             location_cache[location] = coords
             country_cache[location] = country
+            
+            # Update persistent cache
+            cache_data = {}
+            if os.path.exists(cache_file):
+                try:
+                    with open(cache_file, 'rb') as f:
+                        cache_data = pickle.load(f)
+                except:
+                    pass
+            
+            cache_data[location] = (coords, country)
+            try:
+                with open(cache_file, 'wb') as f:
+                    pickle.dump(cache_data, f)
+            except Exception as e:
+                print(f"Warning: Could not save to cache: {e}")
             
             return True, coords, country
         else:
@@ -353,6 +387,30 @@ def is_road_connection_feasible(source_country: str, dest_country: str, distance
         
     return True
 
+def parallel_road_connections(G, source_node, nodes_to_connect, is_source_to_nodes=True):
+    """Process road connections in parallel"""
+    results = {}
+    source_coords = G.nodes[source_node]['coords']
+    
+    def process_connection(node):
+        node_coords = G.nodes[node]['coords']
+        if is_source_to_nodes:
+            road_data = get_road_route(source_coords, node_coords)
+        else:
+            road_data = get_road_route(node_coords, source_coords)
+        return node, road_data
+    
+    # Use ThreadPoolExecutor to parallelize API calls
+    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {executor.submit(process_connection, node): node for node in nodes_to_connect}
+        
+        for future in concurrent.futures.as_completed(futures):
+            node, road_data = future.result()
+            if road_data["success"]:
+                results[node] = road_data
+    
+    return results
+
 def add_road_connections(G: nx.DiGraph, source: str, destination: str) -> nx.DiGraph:
     """
     Add road connections from source to airports/ports and from airports/ports to destination
@@ -389,19 +447,15 @@ def add_road_connections(G: nx.DiGraph, source: str, destination: str) -> nx.DiG
     
     print(f"Connecting {source} to {len(source_country_nodes)} nodes in {source_country}")
     # Connect source to nodes in its country
-    for node in source_country_nodes:
-        node_coords = G.nodes[node]['coords']
-        road_data = get_road_route(source_coords, node_coords)
-        if road_data["success"]:
-            G.add_edge(source, node, **road_data, mode="road")
+    source_airport_connections = parallel_road_connections(G, source, source_country_nodes, True)
+    for node, road_data in source_airport_connections.items():
+        G.add_edge(source, node, **road_data, mode="road")
     
     print(f"Connecting {len(dest_country_nodes)} nodes in {dest_country} to {destination}")
     # Connect destination country nodes to destination
-    for node in dest_country_nodes:
-        node_coords = G.nodes[node]['coords']
-        road_data = get_road_route(node_coords, dest_coords)
-        if road_data["success"]:
-            G.add_edge(node, destination, **road_data, mode="road")
+    dest_airport_connections = parallel_road_connections(G, destination, dest_country_nodes, False)
+    for node, road_data in dest_airport_connections.items():
+        G.add_edge(node, destination, **road_data, mode="road")
     
     return G
 
@@ -598,6 +652,21 @@ def evaluate_route(G: nx.DiGraph, route: List[str], cargo_weight: float, goods_t
         'goods_type_score': goods_type_score,
         'segments': segments
     }
+
+# Add this near the top of your file
+from functools import lru_cache
+
+# Create a route evaluation cache wrapper
+@lru_cache(maxsize=256)
+def cached_route_evaluation(route_tuple, cargo_weight, goods_type, G):
+    """Cache-friendly wrapper for route evaluation"""
+    route = list(route_tuple)
+    return evaluate_route(G, route, cargo_weight, goods_type)
+
+# Then modify your route evaluation calls like:
+def evaluate_with_cache(G, route, cargo_weight, goods_type):
+    """Cached route evaluation"""
+    return cached_route_evaluation(tuple(route), cargo_weight, goods_type, G)
 
 # -------------------------------------------------------------------------
 # MULTI-OBJECTIVE OPTIMIZATION USING NSGA-III
