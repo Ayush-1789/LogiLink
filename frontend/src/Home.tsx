@@ -560,9 +560,9 @@ export default function Home() {
                         </div>
 
                         <div
-                          className={`priority-option ${formikProps.values.priority === "speed" ? "active" : ""}`}
+                          className={`priority-option ${formikProps.values.priority === "time" ? "active" : ""}`}
                           onClick={() =>
-                            formikProps.setFieldValue("priority", "speed")
+                            formikProps.setFieldValue("priority", "time")
                           }
                         >
                           <div className="priority-icon">⚡</div>
