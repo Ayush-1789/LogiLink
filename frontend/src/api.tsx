@@ -58,8 +58,8 @@ export async function getRoutes(
 ) {
   const searchParams = new URLSearchParams();
   searchParams.append("priority", priority);
-  searchParams.append("goodsType", goodsType);
-  searchParams.append("cargoWeight", cargoWeight.toString());
+  searchParams.append("goods_type", goodsType);
+  searchParams.append("cargo_weight", cargoWeight.toString());
 
   const url = `${BASE_URL}/routes/${source}/${destination}?${searchParams}`;
 

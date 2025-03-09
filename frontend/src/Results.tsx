@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { getRoutes, Route } from "./api";
 import { Shipment } from "./Home";
+import Spinner from "./Spinner";
 const WEIGHT_LIMITS = {
   Air: 45000, // 45,000 kg per ULD
   Sea: 20000 * 1000, // 20,000 TEU (assuming 1 TEU ~= 1000 kg)
@@ -11,32 +12,43 @@ export default function Results() {
   const location = useLocation();
   const shipmentDetails = location.state as Shipment;
   const navigate = useNavigate();
-  const [weightWarnings, setWeightWarnings] = useState<{[key: string]: boolean}>({});
+  const [weightWarnings, setWeightWarnings] = useState<{
+    [key: string]: boolean;
+  }>({});
   // Extract priority directly from shipmentDetails for easy access
   const priority = shipmentDetails?.priority || "balanced";
+
+  const [isLoading, setIsLoading] = useState(false);
 
   const [allRouteOptions, setAllRouteOptions] = useState<Route[]>([]);
   useEffect(() => {
     if (shipmentDetails?.weight) {
       const weight = parseFloat(shipmentDetails.weight);
-      const warnings: {[key: string]: boolean} = {};
-      
+      const warnings: { [key: string]: boolean } = {};
+
       // Check each transportation mode
       Object.entries(WEIGHT_LIMITS).forEach(([mode, limit]) => {
         warnings[mode] = weight > limit;
       });
-      
+
       setWeightWarnings(warnings);
     }
   }, [shipmentDetails?.weight]);
 
   const onLoad = async () => {
+    setIsLoading(true);
+
     const routes = await getRoutes(
       shipmentDetails.origin,
       shipmentDetails.destination,
+      shipmentDetails.priority,
+      shipmentDetails.goodsType,
+      shipmentDetails.weight,
     );
 
     setAllRouteOptions(routes);
+
+    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -132,17 +144,19 @@ export default function Results() {
   // Format transit time to days and hours
   const formatTransitTime = (hours: number) => {
     if (hours < 24) {
-      return `${hours} hours`;
+      return `${Math.floor(hours)} hours`;
     }
     const days = Math.floor(hours / 24);
-    const remainingHours = hours % 24;
+    const remainingHours = Math.floor(hours % 24);
     return remainingHours > 0
       ? `${days} days ${remainingHours} hrs`
       : `${days} days`;
   };
 
   // Check if any transportation mode has a weight warning
-  const hasWeightWarning = Object.values(weightWarnings).some(warning => warning);
+  const hasWeightWarning = Object.values(weightWarnings).some(
+    (warning) => warning,
+  );
 
   return (
     <div className="results-container">
@@ -151,12 +165,15 @@ export default function Results() {
         <div className="weight-warning-banner">
           <div className="warning-icon">⚠️</div>
           <div className="warning-text">
-            <strong>Weight limit exceeded.</strong> Updated to a higher capacity cargo. Extra costs are included.
+            <strong>Weight limit exceeded.</strong> Updated to a higher capacity
+            cargo. Extra costs are included.
           </div>
         </div>
       )}
 
-      {priorityFilteredRoutes.length > 0 ? (
+      {isLoading ? (
+        <Spinner />
+      ) : priorityFilteredRoutes.length > 0 ? (
         <div className="routes-content">
           {/* Top 3 Recommendations Section */}
           <section className="route-section recommended-section">
@@ -172,7 +189,7 @@ export default function Results() {
             <div className="recommended-routes-grid">
               {getRecommendedRoutes().map((route, index) => (
                 <div
-                  key={route.id}
+                  key={index}
                   className={`route-card recommended rank-${index + 1}`}
                   onClick={() => showRouteDetails(route)}
                 >
@@ -212,12 +229,12 @@ export default function Results() {
                       <div className="metric primary">
                         <span className="metric-emphasis">
                           {priority === "cost"
-                            ? "₹" + route.data.total_cost?.toLocaleString()
+                            ? "₹" + route.data.total_cost.toFixed(2)
                             : priority === "speed"
                               ? formatTransitTime(route.data.total_time)
                               : priority === "eco"
-                                ? `${route.data.total_emissions} kg CO₂`
-                                : "₹" + route.data.total_cost?.toLocaleString()}
+                                ? `${route.data.total_emissions.toFixed(2)} kg CO₂`
+                                : "₹" + route.data.total_cost.toFixed(2)}
                         </span>
                         <span className="metric-label-primary">
                           {getPriorityLabel()} Option
@@ -228,7 +245,7 @@ export default function Results() {
                         <div className="metric">
                           <span className="metric-icon">💰</span>
                           <span className="metric-value">
-                            ₹{route.data.total_cost?.toLocaleString() || "N/A"}
+                            ₹{route.data.total_cost.toFixed(2) || "N/A"}
                           </span>
                         </div>
                         <div className="metric">
@@ -241,7 +258,7 @@ export default function Results() {
                           <span className="metric-icon">🌿</span>
                           <span className="metric-value">
                             {route.data.total_emissions
-                              ? `${route.data.total_emissions} kg`
+                              ? `${route.data.total_emissions.toFixed(2)} kg`
                               : "N/A"}
                           </span>
                         </div>
@@ -270,7 +287,6 @@ export default function Results() {
                     className="route-card alternative"
                     onClick={() => showRouteDetails(route)}
                   >
-                  
                     <div className="alt-route-content">
                       <div className="alt-route-main">
                         <div className="alt-route-header">

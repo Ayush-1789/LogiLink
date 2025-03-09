@@ -15,6 +15,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class Segment(BaseModel):
     start: str
     end: str
@@ -70,6 +71,8 @@ async def routes(source: str,
                  priority: Priority = Priority.BALANCED,
                  goods_type: str = GoodsType.STANDARD,
                  cargo_weight: float = 0):
+    print(f"REQUEST: {source}, {destination}, {priority}, {goods_type}, {cargo_weight}")
+    
     res = get_routing(source, destination, priority, goods_type, cargo_weight)
 
     routes = []
